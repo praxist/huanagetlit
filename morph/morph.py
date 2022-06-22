@@ -12,8 +12,8 @@ import math
 enter_pressed = False;
 rc = redis.Redis()
 
-LED_WIDTH = 6
-LED_HEIGHT = 100
+LED_WIDTH = 200
+LED_HEIGHT = 4
 
 def waitForEnter():
     global enter_pressed
