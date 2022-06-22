@@ -10,17 +10,49 @@ aliases:
 path: ./animations/
 
 animation:
-  typename: sequence
-  length: 30
-  run:
-    fps: 25
-    threaded: true
+  typename: mixer
+  levels: [1, 0.5, 0.25, 1]
   animations:
-  - typename: entry.Entry
-    run:
-      fps: 60
-    palette:
-      colors: rainbow
+    - typename: $bpa.MatrixRain.MatrixRain
+      tail: 1
+      growthRate: 1
+      run:
+        fps: 30
+      palette:
+        colors:
+          - royal blue 1
+    - typename: $bpa.MatrixRain.MatrixRain
+      tail: 1
+      growthRate: 1
+      run:
+        fps: 30
+      palette:
+        colors:
+          - red
+    - typename: $bpa.MatrixRain.MatrixRain
+      tail: 1
+      growthRate: 1
+      run:
+        fps: 30
+      palette:
+        colors:
+          - green
+    - typename: entry.Entry
+      run:
+        fps: 60
+      palette:
+        colors: rainbow
+  #typename: sequence
+  #length: 30
+  #run:
+  #  fps: 25
+  #  threaded: true
+  #animations:
+  #- typename: entry.Entry
+  #  run:
+  #    fps: 60
+  #  palette:
+  #    colors: rainbow
   #typename: strips.Combo
   #name: Combo
   #run:

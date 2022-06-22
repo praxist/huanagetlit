@@ -2,7 +2,7 @@
 
 import sys
 import time
-sys.path.append('../sensel-api/sensel-lib-wrappers/sensel-lib-python')
+sys.path.append('sensel-api/sensel-lib-wrappers/sensel-lib-python')
 import sensel
 import redis
 import binascii
