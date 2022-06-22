@@ -17,7 +17,7 @@ LED_HEIGHT = 4
 
 def waitForEnter():
     global enter_pressed
-    raw_input("Press Enter to exit...")
+    input("Press Enter to exit...")
     enter_pressed = True
     return
 

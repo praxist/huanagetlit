@@ -7,6 +7,7 @@ brew instal python@3.10
 brew link python@3.10 --overwrite
 pip3 install pipenv
 pipenv install
+pip3 install jupyter
 ```
 
 Running

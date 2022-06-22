@@ -11,7 +11,7 @@ path: ./animations/
 
 animation:
   typename: mixer
-  levels: [1, 0.5, 0.25, 1]
+  levels: [0, 0, 0, 1, 1]
   animations:
     - typename: $bpa.MatrixRain.MatrixRain
       tail: 1
@@ -40,6 +40,12 @@ animation:
     - typename: entry.Entry
       run:
         fps: 60
+      palette:
+        colors: rainbow
+    - typename: strips.Combo
+      name: Combo
+      run:
+        fps: 100
       palette:
         colors: rainbow
   #typename: sequence

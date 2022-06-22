@@ -16,7 +16,7 @@ path: ./animations/
 
 animation:
   typename: mixer
-  levels: [1, 0, 0, 1]
+  levels: [0, 0, 0, 1]
   animations:
     - typename: $bpa.MatrixRain.MatrixRain
       tail: 1
