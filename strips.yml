@@ -1,0 +1,73 @@
+# Actual config for physical project
+
+drivers:
+  - c_order: GRB
+    num: 800
+    #gamma: [1.1, 0.5, 0]
+    ledtype: WS2811
+    typename: .serial
+    # dev: /dev/tty.usbmodem60460901
+    dev: /dev/tty.usbmodem60460901
+
+aliases:
+  bpa: BiblioPixelAnimations.matrix
+
+path: ./animations/
+
+animation:
+  typename: mixer
+  levels: [1, 0.5, 0.25, 1]
+  animations:
+    - typename: $bpa.MatrixRain.MatrixRain
+      tail: 1
+      growthRate: 1
+      run:
+        fps: 30
+      palette:
+        colors:
+          - royal blue 1
+    - typename: $bpa.MatrixRain.MatrixRain
+      tail: 1
+      growthRate: 1
+      run:
+        fps: 30
+      palette:
+        colors:
+          - red
+    - typename: $bpa.MatrixRain.MatrixRain
+      tail: 1
+      growthRate: 1
+      run:
+        fps: 30
+      palette:
+        colors:
+          - green
+    - typename: entry.Entry
+      run:
+        fps: 60
+      palette:
+        colors: rainbow
+  #typename: sequence
+  #length: 30
+  #run:
+  #  fps: 25
+  #  threaded: true
+  #animations:
+  #- typename: entry.Entry
+  #  run:
+  #    fps: 60
+  #  palette:
+  #    colors: rainbow
+  #typename: strips.Combo
+  #name: Combo
+  #run:
+  #  fps: 60
+  #palette:
+  #  colors: rainbow
+
+layout:
+  typename: matrix
+  serpentine: false
+  width: 6
+  height: 100
+  brightness: 255
