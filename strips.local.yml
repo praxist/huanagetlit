@@ -11,7 +11,7 @@ path: ./animations/
 
 animation:
   typename: mixer
-  levels: [0, 0, 0, 1, 1]
+  levels: [0, 0, 0, 1, 0]
   animations:
     - typename: $bpa.MatrixRain.MatrixRain
       tail: 1
@@ -68,7 +68,7 @@ animation:
 
 layout:
   typename: matrix
-  serpentine: true
+  serpentine: false
   width: 200
   height: 4
   brightness: 255
