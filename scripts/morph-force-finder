@@ -1,0 +1,8 @@
+#!/bin/bash
+
+# Find morph coordinates of greatest force at each frame
+# Use to find coordinates of each button
+
+DIR=$(dirname -- "$0")
+cd $DIR/..
+pipenv run -- python3 morph/morph-force-finder.py

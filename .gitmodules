@@ -1,0 +1,12 @@
+[submodule "BiblioPixel"]
+	path = BiblioPixel
+	url = https://github.com/praxist/BiblioPixel.git
+[submodule "BiblioPixel.wiki"]
+	path = BiblioPixel.wiki
+	url = https://github.com/ManiacalLabs/BiblioPixel.wiki.git
+[submodule "SimPixel"]
+	path = SimPixel
+	url = https://github.com/ManiacalLabs/SimPixel.git
+[submodule "sensel-api"]
+	path = sensel-api
+	url = https://github.com/sensel/sensel-api.git

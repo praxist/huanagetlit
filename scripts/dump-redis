@@ -1,0 +1,7 @@
+#!/bin/bash
+
+# Dumps the force percentages per led pixel stored in redis for debugging
+
+DIR=$(dirname -- "$0")
+cd $DIR/..
+pipenv run -- python3 morph/dump-redis.py
