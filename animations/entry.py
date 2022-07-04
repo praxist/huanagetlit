@@ -22,7 +22,7 @@ class Entry(Matrix):
     """
     def __init__(self, *args,
                  **kwds):
-        self.fade = 0.97
+        self.fade = 0.90
 
         super().__init__(*args, **kwds)
 
@@ -45,8 +45,10 @@ class Entry(Matrix):
             for j in range(self.layout.width):
                 val = int(a[j]) * 2
 
-                if val > 0:
-                    self.layout.set(j, i, self.palette(val))
+                color = (255, 255, 255)
+                # color = [(255,0,0), (0,255,0), (0,0,255)][self._step % 3]
+                if val > 0.75:
+                    self.layout.set(j, i, color)
                 else:
                     self.fade_pixel(j, i)
 
