@@ -36,18 +36,25 @@ class Entry(Matrix):
             )
 
     def step(self, amt=1):
-        color = self.palette(self._step)
-        h = self.rc.hgetall("morph")
+        pass
+        # color = self.palette(self._step)
+        # h = self.rc.hgetall("morph")
+        # # print(h)
 
-        for i in range(self.layout.height):
-            v = h[str(i)]
-            a = v.split(",")
-            for j in range(self.layout.width):
-                val = int(a[j]) * 2
+        # for i in range(self.layout.height):
+        #     v = h[str(i)]
+        #     a = v.split(",")
 
-                if val > 0:
-                    self.layout.set(j, i, self.palette(val))
-                else:
-                    self.fade_pixel(j, i)
+        #     # print("a ", len(a), a)
 
-        self._step += amt
+        #     for j in range(self.layout.width):
+        #         val = int(a[j]) * 2
+
+        #         # color = (255, 255, 255)
+        #         color = [(255,0,0), (0,255,0), (0,0,255)][self._step % 3]
+        #         if val > 0.75:
+        #             self.layout.set(j, i, color)
+        #         else:
+        #             self.fade_pixel(j, i)
+
+        # self._step += amt

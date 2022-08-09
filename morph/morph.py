@@ -12,8 +12,10 @@ import math
 enter_pressed = False;
 rc = redis.Redis()
 
-LED_WIDTH = 200
-LED_HEIGHT = 4
+LED_WIDTH = 100
+LED_HEIGHT = 8
+
+FLIP_X = True
 
 def waitForEnter():
     global enter_pressed
@@ -48,6 +50,12 @@ def scale(force):
     return int(percent)
 
 def writeFrame(frame, info):
+    # print("nop")
+    # print(dir(frame))
+    # print(frame.contacts.contents)
+    # print(frame.n_contacts)
+    # print(dir(frame.contacts.contents))
+
     global rc
     x_ratio = info.num_cols / LED_WIDTH
     y_ratio = info.num_rows / LED_HEIGHT
@@ -60,8 +68,12 @@ def writeFrame(frame, info):
     for i in range(LED_HEIGHT):
         h[i] = []
         for j in range(LED_WIDTH):
-            xstart = int(math.floor(j * x_ratio))
-            xend = int(math.ceil((j + 1) * x_ratio))
+            if FLIP_X:
+                xstart = int(math.floor((LED_WIDTH - j - 1) * x_ratio))
+                xend = int(math.ceil((LED_WIDTH - j) * x_ratio))
+            else:
+                xstart = int(math.floor(j * x_ratio))
+                xend = int(math.ceil((j + 1) * x_ratio))
             ystart = int(math.floor(i * y_ratio))
             yend = int(math.ceil((i + 1) * y_ratio))
 
@@ -77,7 +89,15 @@ def writeFrame(frame, info):
 
         h[i] = ",".join(h[i])
 
+    # set total force separately (cribbed from example)
+    total_force = 0.0
+    for n in range(info.num_rows * info.num_cols):
+        total_force += frame.force_array[n]
+
     rc.hmset("morph", h)
+    rc.set("morph_total_force", int(total_force))
+
+
 
 
 def closeSensel(frame):
