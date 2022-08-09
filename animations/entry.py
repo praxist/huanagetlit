@@ -2,6 +2,8 @@ import math
 import redis
 import time
 
+import overlay
+
 from bibliopixel import animation
 from bibliopixel.colors import COLORS
 from bibliopixel.animation.matrix import Matrix
@@ -23,6 +25,9 @@ class Entry(Matrix):
     def __init__(self, *args,
                  **kwds):
         self.fade = 0.97
+        self.button_states = {}
+        self.h = ""
+        self.shift = 0
 
         super().__init__(*args, **kwds)
 
@@ -36,25 +41,27 @@ class Entry(Matrix):
             )
 
     def step(self, amt=1):
-        pass
-        # color = self.palette(self._step)
-        # h = self.rc.hgetall("morph")
-        # # print(h)
+        color = self.palette(self._step)
+        now = time.time()
 
-        # for i in range(self.layout.height):
-        #     v = h[str(i)]
-        #     a = v.split(",")
+        self.h = self.rc.hgetall("morph")
+        overlay.update_buttons(self.rc.get("buttons"), now)
 
-        #     # print("a ", len(a), a)
+        if overlay.l1.released():
+            self.shift += 20
 
-        #     for j in range(self.layout.width):
-        #         val = int(a[j]) * 2
+        if overlay.l2.released():
+            self.shift -= 20
 
-        #         # color = (255, 255, 255)
-        #         color = [(255,0,0), (0,255,0), (0,0,255)][self._step % 3]
-        #         if val > 0.75:
-        #             self.layout.set(j, i, color)
-        #         else:
-        #             self.fade_pixel(j, i)
+        for i in range(self.layout.height):
+            v = self.h[str(i)]
+            a = v.split(",")
+            for j in range(self.layout.width):
+                val = int(a[j]) * 2
 
-        # self._step += amt
+                if val > 0:
+                    self.layout.set(j, i, self.palette(val + self.shift))
+                else:
+                    self.fade_pixel(j, i)
+
+        self._step += amt

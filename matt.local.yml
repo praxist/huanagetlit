@@ -1,0 +1,27 @@
+# Local config for testing patterns
+
+driver:
+  typename: simpixel
+  num: 800
+
+aliases:
+  bpa: BiblioPixelAnimations.matrix
+
+path: ./animations/
+
+animation:
+  typename: mixer
+  levels: [1]
+  animations:
+    - typename: entry.Entry
+      run:
+        fps: 60
+      palette:
+        colors: rainbow
+
+layout:
+  typename: matrix
+  serpentine: false
+  width: 100
+  height: 8
+  brightness: 255

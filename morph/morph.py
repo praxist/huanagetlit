@@ -9,6 +9,11 @@ import binascii
 import threading
 import math
 
+import overlay as o
+
+DEBUG = False
+OVERLAY = True
+
 enter_pressed = False;
 rc = redis.Redis()
 
@@ -57,14 +62,18 @@ def writeFrame(frame, info):
     # print(dir(frame.contacts.contents))
 
     global rc
+    global button_states
     x_ratio = info.num_cols / LED_WIDTH
     y_ratio = info.num_rows / LED_HEIGHT
 
-    key = "morph"
-    h = {}
+    if OVERLAY:
+        button_dat = o.get_button_states(frame, info, DEBUG)
+
+    # Mapping each morph "force pixel" to actual LEDs
     # For each LED:
     # Map a box of coordinates from the morph and take the averages of
     # their values to determine an led's force
+    h = {}
     for i in range(LED_HEIGHT):
         h[i] = []
         for j in range(LED_WIDTH):
@@ -96,8 +105,7 @@ def writeFrame(frame, info):
 
     rc.hmset("morph", h)
     rc.set("morph_total_force", int(total_force))
-
-
+    rc.set("buttons", button_dat)
 
 
 def closeSensel(frame):
