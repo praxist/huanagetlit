@@ -10,26 +10,19 @@ class Button:
         self.last_update = 0
 
     def held(self):
-        # check the button has been held down more recently than the last time
-        # this was checked
-        #print(self.last_update)
-        #print(self.last_down)
-        #print(self.previous_update)
+        # check the last time button was down was more recent than last frame
         return self.last_down > self.previous_update
 
     def released(self):
-        # check the button has been down before the last time this was checked
-        # but self.last_update is up
-        return self.last_up > self.previous_update and self.last_down > self.previous_update - (self.last_update - self.previous_update)
+        # check the last time button was registered in both up and down states
+        # since last frame
+        return self.last_up > self.previous_update and self.last_down > self.previous_update
 
-    def update(self, state, last_changed, now):
+    def update(self, last_up, last_down, now):
         self.previous_update = self.last_update
         self.last_update = now
-
-        if state == UP:
-           self.last_up = last_changed
-        else:
-           self.last_down = last_changed
+        self.last_up = last_up
+        self.last_down = last_down
 
 l1 = Button("l1")
 l2 = Button("l2")
@@ -71,5 +64,5 @@ buttons = {
 def update_buttons(dat, now):
     buttons_dat = dat.split(",")
     for button_dat in buttons_dat:
-        name, state, ts = button_dat.split("-")
-        buttons[name].update(int(state), float(ts), now)
+        name, ts_up, ts_down = button_dat.split("-")
+        buttons[name].update(float(ts_up), float(ts_down), now)

@@ -39,22 +39,23 @@ DOWN = 1
 
 button_states = {}
 for b, _ in BUTTONS.items():
-    button_states[b] = UP
+    # (up, down) timestamps
+    button_states[b] = [0, 0]
 
 def get_button_states(frame, info, debug):
+    now = time.time()
     for name, coords in BUTTONS.items():
         x, y = coords
         if frame.force_array[y * info.num_cols + x] > MIN_BUT_FORCE:
             if debug:
                 print(name)
-            button_states[name] = DOWN
+            button_states[name][DOWN] = now
         else:
-            button_states[name] = UP
+            button_states[name][UP] = now
 
     # Write this to redis
     dat = ""
-    now = time.time()
-    dat = ",".join(["%s-%s-%s" % (name, state, now) for name, state in
+    dat = ",".join(["%s-%s-%s" % (name, timestamps[UP], timestamps[DOWN]) for name, timestamps in
             button_states.items()])
     if debug:
         print(dat)

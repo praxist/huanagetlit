@@ -44,8 +44,9 @@ class Entry(Matrix):
         color = self.palette(self._step)
         now = time.time()
 
-        self.h = self.rc.hgetall("morph")
-        overlay.update_buttons(self.rc.get("buttons"), now)
+        if self._step % 2 == 0:
+            self.h = self.rc.hgetall("morph")
+            overlay.update_buttons(self.rc.get("buttons"), now)
 
         if overlay.l1.released():
             self.shift += 20
