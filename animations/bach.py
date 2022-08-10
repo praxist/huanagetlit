@@ -140,18 +140,13 @@ class Wave(Matrix):
         num_waves = 2
 
         def get_wave(w):
-            x = (1 + math.sin((w / self.layout.width + (2 * (1 - self.slowclock.frac))) * num_waves * math.pi)) / 2
-            # if x < 0:
-            #     print("BAD", x)
-            # if x > 1:
-            #     print("BAD", x)
-            return x
-            # return (1 + math.sin((w / self.layout.width - self.clock.frac) * num_waves * math.pi)) / 2
+            return (1 + math.sin((w / self.layout.width + (2 * (1 -
+                                                                self.slowclock.frac)))
+                                 * num_waves * math.pi)) / 2
 
         pos_perc = 1.0
         # pos_perc = 1.0 - baseline_perc - wide_perc
         pos = [pos_perc * get_wave(x) for x in range(self.layout.width)]
-        # print(pos)
 
         for x in range(self.layout.width):
             thing = baseline + wide + pos[x]
@@ -167,37 +162,24 @@ class Wave(Matrix):
 
             for y in range(self.layout.height):
 
-                # spread = 40
-                # hue = y * (255 / (self.layout.height + 1))
-                # hue += spread / self.layout.width * x
-                # hue = int(y)
-
-                # spread = 40
-                # # hue = 40
-                # hue = 40 * y
-                # hue += (float(x) / self.layout.width) * spread
-                # hue += 255 * self.slowclock.frac
-                # hue = int(hue) % 255
-
                 # Color spread per strip. At 0 each strip is a single color, at
                 # 255 each is a whole rainbow.
                 window = 20
-                # window = 1
 
                 # At 0 the strip colors are evenly distibuted in the rainbow,
                 # at 1 all strips have the same starting/ending colors.
                 squish = .8
-                # squish = 0
 
                 # Make color gradient chance in the opposite direction of wave
                 # movement.
-                revx = False
+                revx = True
                 hue = (int((255 * self.colorclock.frac) +
                            ((1 - squish) * 255 * y / self.layout.height) +
                            ((1 - x if revx else x)
                             * window / self.layout.width))
                        % 255)
 
+                # default sat for non-strobing pixels
                 sat = 200
 
                 # print((y, x))
@@ -245,19 +227,17 @@ class Sparks(Matrix):
         self._last_fetch = 0
         self._last_frac = 0
 
-        # self.sparks = [[0 for x in range(self.layout.width)]
-        #                for y in range(self.layout.height)]
         self.sparks = {}
         self.mtf = 0
         self.blooded = False
 
-        self.steps_per_clock = 10  # blame this if pattern looks bad at start
+        self.steps_per_clock = 10  # sane default, blame this if pattern looks
+                                   # bad at start
         self.stepcount = 0
 
     def fetch(self):
         ts, = map(int, self.rc.mget("ts"))
         self.mtf = int(self.rc.get("morph_total_force"))
-        # ts = int(self.rc.mget("ts"))
 
         if ts > self._last_fetch:
             self._last_fetch = ts
@@ -267,6 +247,7 @@ class Sparks(Matrix):
         self.clock.update()
         self.fetch()
 
+        # log-ish pressure gradient
         levels = [100,
                   200,
                   400,
@@ -298,22 +279,11 @@ class Sparks(Matrix):
 
         wdex = [lmin + int((lmax - lmin) / len(levels) * i) for i in range(len(levels))]
         wdex.append(lmax)
-        # print(wdex)
 
-        # print(self.mtf)
-
-        baseline_want = 10
-        mul = 10
-
-        # want = baseline_want - len(self.sparks)
-        # want = max(lmin - len(self.sparks), 0)
         want = lmin
         if self.mtf > levels[0]:
-            # want += (mul * bisect.bisect(levels, self.mtf))
             want = wdex[bisect.bisect(levels, self.mtf)]
-        # want = math.ceil(want / self.steps_per_clock)
         wantnow = math.ceil((want - len(self.sparks))/ self.steps_per_clock)
-        # print(self.mtf, want, len(self.sparks))
         if wantnow > 0:
             for x in range(wantnow):
                 k = (random.randint(0, self.layout.height),
@@ -321,8 +291,7 @@ class Sparks(Matrix):
                 if k not in self.sparks:
                     self.sparks[k] = 255
 
-        # # choppy version
-        # # rolled over, add a spark
+        # # choppy version, adds N sparks on clock rollover (version above smears)
         # if self._last_frac > self.fastclock.frac:
         #     self.steps_per_clock = self.stepcount
         #     print("steps per clock", self.steps_per_clock)
@@ -348,10 +317,11 @@ class Sparks(Matrix):
         if self.mtf > startwarn:
             for y in range(self.layout.height):
                 for x in range(self.layout.width):
-                    # thing = (min(self.mtf, 100000) - 50000) / 50000
-                    # thing = int(255 * ((min(self.mtf, 100000) - 50000) / 50000))
-                    # print(thing)
-                    self.layout.setHSV(x, y, (0, 220, int(100 * ((min(self.mtf, maxwarn) - startwarn) / (maxwarn - startwarn)))))
+                    self.layout.setHSV(x, y, (0, 220, int(100 * ((min(self.mtf,
+                                                                      maxwarn)
+                                                                  - startwarn)
+                                                                 / (maxwarn -
+                                                                    startwarn)))))
                     self.blooded = True
         if self.mtf <= 80000 and self.blooded:
             for y in range(self.layout.height):
@@ -372,9 +342,7 @@ class Sparks(Matrix):
             self.layout.setHSV(x, y, (0, 0, 0))
             self.sparks.pop(k)
 
-
         self._last_frac = self.fastclock.frac
-
 
 
 class EmberFireball:
@@ -421,7 +389,7 @@ class Embers(Matrix):
         super().__init__(*args, **kwds)
         # time to send a fireball down the strip
         self.clock = Clock(bpm, multiple)
-        # launch twice as fast as it takes to complete the strip
+        # (X, Y): launch Y/X times as fast as it takes to complete the strip
         self.launchclock = self.clock.subclock(1, 4)
         self.fade = fade
         self.balls = []
@@ -443,20 +411,7 @@ class Embers(Matrix):
         for xy in ded:
             del self.embers[xy]
 
-    # # fades pixel at [i,j] by self.fade
-    # def fade_pixel_random(self, i, j):
-    #     hi, lo = 1.5, .45
-    #     old = self.layout.get(i, j)
-    #     if old != (0,0,0):
-    #         fade = lo + (hi - lo) * random.random()
-    #         self.layout.set(
-    #             i, j,
-    #             [math.floor(x * fade) for x in old]
-    #         )
-
     def fetch(self):
-        # ts, = map(int, self.rc.mget("ts"))
-
         now = time.time()
         overlay.update_buttons(self.rc.get("buttons"), now)
         overlay.update_sliders(self.rc.get("sliders"))
@@ -465,7 +420,7 @@ class Embers(Matrix):
         self.clock.update()
         self.fetch()
 
-        sparkprob = .75
+        sparkprob = 75
         startbright = 128
 
         hi = 255
@@ -493,7 +448,7 @@ class Embers(Matrix):
             head = int(width * fb.frac)
             if head <= self.layout.width - 1:
                 v[head] = 255
-                if random.random() < sparkprob:
+                if random.randint(0, 99) < sparkprob:
                     self.embers[(head, fb.strip)] = (startbright, fb.hue)
             # tail should be gone at this point
             elif head - fb.size >= self.layout.width:
@@ -525,34 +480,3 @@ class Embers(Matrix):
 
         self.fade_embers()
         self._last_frac = self.launchclock.frac
-
-    # def old(self, amt=1):
-    #     leader_size = 8
-    #     # how white (1 full white)
-    #     hw = .4
-
-    #     stepscale = 7 / 8
-    #     eff_step = int(self._step * stepscale)
-    #     for i in range(self.layout.width):
-    #         # print(self._step, self.layout.width, self._step % self.layout.width)
-    #         do_light = eff_step % self.layout.width == i
-    #         for j in range(self.layout.height):
-    #             # color = (255,255,255)
-    #             color = self.palette(int(255 * i / self.layout.width))
-    #             # color = self.palette(random.randint(0, 255))
-    #             if do_light:
-    #                 # leading white lights
-    #                 for k in range(leader_size, 0, -1):
-    #                     if i + k < self.layout.width:
-    #                         self.layout.set(i + k, j,
-    #                             blend((255, 255, 255), color,
-    #                                   hw * k / leader_size))
-    #                 self.layout.set(i, j, color)
-    #             self.fade_pixel_random(i, j)
-
-    #     if self._step > int(1 / stepscale) + 1 and eff_step == 0:
-    #         self._step = 0
-    #     self._step += amt
-
-
-
