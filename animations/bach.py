@@ -3,10 +3,12 @@ from __future__ import division
 import bisect
 import math
 import random
+import time
 
 from bibliopixel.animation.matrix import Matrix
 from strips import Clock
 from strips import SubClock
+import overlay
 import redis
 
 
@@ -452,8 +454,16 @@ class Embers(Matrix):
     #             [math.floor(x * fade) for x in old]
     #         )
 
+    def fetch(self):
+        # ts, = map(int, self.rc.mget("ts"))
+
+        now = time.time()
+        overlay.update_buttons(self.rc.get("buttons"), now)
+        overlay.update_sliders(self.rc.get("sliders"))
+
     def step(self, amt=1):
         self.clock.update()
+        self.fetch()
 
         sparkprob = .75
         startbright = 128
@@ -462,9 +472,11 @@ class Embers(Matrix):
         lo = 20
 
         # Clock rolled over, launch a fireball
-        if self._last_frac > self.launchclock.frac:
+        # if self._last_frac > self.launchclock.frac:
+        if overlay.t1.released():
             self.balls.append(EmberFireball(
-                random.randint(0, self.layout.height - 1),
+                1,
+                # random.randint(0, self.layout.height - 1),
                 44,
                 self.clock.frac,
                 random.randint(0, 255)
