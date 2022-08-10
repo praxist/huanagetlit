@@ -1,15 +1,8 @@
 # Local config for testing patterns
 
-# driver:
-#   typename: simpixel
-#   num: 800
-
-drivers:
-  - c_order: GRB
-    num: 800
-    ledtype: WS2811
-    typename: .serial
-    dev: /dev/tty.usbmodem60460901
+driver:
+  typename: simpixel
+  num: 800
 
 aliases:
   bpa: BiblioPixelAnimations.matrix
@@ -19,49 +12,30 @@ path: ./animations/
 animation:
   typename: mixer
   levels: [1]
-  # levels: [1, 1]
-  # levels: [0, 0, 1]
   animations:
-    # - typename: $bpa.MatrixRain.MatrixRain
-    #   tail: 1
-    #   growthRate: 1
-    #   run:
-    #     fps: 10
-    #   palette:
-    #     colors:
-    #       - royal blue 1
-    # - typename: $bpa.MatrixRain.MatrixRain
-    #   tail: 1
-    #   growthRate: 1
-    #   run:
-    #     fps: 10
-    #   palette:
-    #     colors:
-    #       - red
-    # - typename: $bpa.MatrixRain.MatrixRain
-    #   tail: 1
-    #   growthRate: 1
-    #   run:
-    #     fps: 10
-    #   palette:
-    #     colors:
-    #       - green
 
     # - typename: entry.Entry
-    #   run:
-    #     fps: 120
-    #   palette:
-    #     colors: rainbow
-
-    # - typename: strips.Combo
-    #   name: Combo
     #   run:
     #     fps: 100
     #   palette:
     #     colors: rainbow
 
-    # - typename: strips.Embers
-    #   name: Embers
+    # - typename: bach.Id
+    #   name: Id
+    #   run:
+    #     fps: 100
+    #   palette:
+    #     colors: rainbow
+
+    # - typename: bach.Wave
+    #   name: Wave
+    #   run:
+    #     fps: 100
+    #   palette:
+    #     colors: rainbow
+
+    # - typename: bach.Sparks
+    #   name: Sparks
     #   run:
     #     fps: 100
     #   palette:
@@ -73,46 +47,6 @@ animation:
         fps: 100
       palette:
         colors: rainbow
-
-    # - typename: bach.Wave
-    #   name: Wave
-    #   run:
-    #     fps: 120
-    #   palette:
-    #     colors: rainbow
-
-    # - typename: bach.Sparks
-    #   name: Sparks
-    #   run:
-    #     fps: 120
-    #   palette:
-    #     colors: rainbow
-
-    # - typename: bach.Bump
-    #   name: Bump
-    #   run:
-    #     fps: 100
-    #   palette:
-    #     colors: rainbow
-
-  #typename: sequence
-  #length: 30
-  #run:
-  #  fps: 25
-  #  threaded: true
-  #animations:
-  #- typename: entry.Entry
-  #  run:
-  #    fps: 60
-  #  palette:
-  #    colors: rainbow
-
-  #typename: strips.Combo
-  #name: Combo
-  #run:
-  #  fps: 60
-  #palette:
-  #  colors: rainbow
 
 layout:
   typename: matrix

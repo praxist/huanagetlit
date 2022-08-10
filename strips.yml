@@ -1,12 +1,15 @@
 # Actual config for physical project
 
+
+# driver:
+#   typename: simpixel
+#   num: 800
+
 drivers:
   - c_order: GRB
     num: 800
-    #gamma: [1.1, 0.5, 0]
     ledtype: WS2811
     typename: .serial
-    # dev: /dev/tty.usbmodem60460901
     dev: /dev/tty.usbmodem60460901
 
 aliases:
@@ -16,64 +19,46 @@ path: ./animations/
 
 animation:
   typename: mixer
-  levels: [0, 0, 0, 1, 0]
+  levels: [1]
   animations:
-    - typename: $bpa.MatrixRain.MatrixRain
-      tail: 1
-      growthRate: 1
-      run:
-        fps: 10
-      palette:
-        colors:
-          - royal blue 1
-    - typename: $bpa.MatrixRain.MatrixRain
-      tail: 1
-      growthRate: 1
-      run:
-        fps: 10
-      palette:
-        colors:
-          - red
-    - typename: $bpa.MatrixRain.MatrixRain
-      tail: 1
-      growthRate: 1
-      run:
-        fps: 10
-      palette:
-        colors:
-          - green
-    - typename: entry.Entry
-      run:
-        fps: 60
-      palette:
-        colors: rainbow
-    - typename: strips.Combo
-      name: Combo
+
+    # - typename: entry.Entry
+    #   run:
+    #     fps: 100
+    #   palette:
+    #     colors: rainbow
+
+    # - typename: bach.Id
+    #   name: Id
+    #   run:
+    #     fps: 100
+    #   palette:
+    #     colors: rainbow
+
+    # - typename: bach.Wave
+    #   name: Wave
+    #   run:
+    #     fps: 100
+    #   palette:
+    #     colors: rainbow
+
+    - typename: bach.Sparks
+      name: Sparks
       run:
         fps: 100
       palette:
         colors: rainbow
-  #typename: sequence
-  #length: 30
-  #run:
-  #  fps: 25
-  #  threaded: true
-  #animations:
-  #- typename: entry.Entry
-  #  run:
-  #    fps: 60
-  #  palette:
-  #    colors: rainbow
-  #typename: strips.Combo
-  #name: Combo
-  #run:
-  #  fps: 60
-  #palette:
-  #  colors: rainbow
+
+    # - typename: bach.Embers
+    #   name: Embers
+    #   run:
+    #     fps: 100
+    #   palette:
+    #     colors: rainbow
 
 layout:
   typename: matrix
   serpentine: false
-  width: 200
-  height: 4
+  width: 100
+  height: 8
   brightness: 255

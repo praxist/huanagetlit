@@ -1,0 +1,9 @@
+#!/usr/bin/env sh
+
+# run as
+# ./scripts/rerun; fswatch -o . | xargs -n1 ./scripts/rerun; kill $(cat /tmp/wd_pid)
+
+kill `cat /tmp/wd_pid`
+# pipenv run -- bp -s --loglevel frame strips.yml &
+pipenv run -- bp -s strips.yml &
+echo "$!" > /tmp/wd_pid
