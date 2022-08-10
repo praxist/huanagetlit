@@ -90,7 +90,6 @@ class Wave(Matrix):
         self._stickymorph = [[0 for x in range(self.layout.width)] for y in range(self.layout.height)]
 
         self.strobe = True
-        self.threestep = 0
 
     def fetch(self):
         ts, = map(int, self.rc.mget("ts"))
@@ -112,7 +111,6 @@ class Wave(Matrix):
         self.fetch()
 
         self.strobe = not self.strobe
-        self.threestep = (self.threestep + 1) % 4
 
         for y in range(len(self._morph)):
             for x in range(len(self._morph[y])):
@@ -191,7 +189,7 @@ class Wave(Matrix):
 
                 # Make color gradient chance in the opposite direction of wave
                 # movement.
-                revx = True
+                revx = False
                 hue = (int((255 * self.colorclock.frac) +
                            ((1 - squish) * 255 * y / self.layout.height) +
                            ((1 - x if revx else x)
@@ -224,15 +222,6 @@ class Wave(Matrix):
 
                         # sat = 80 + int((255 - 80) * abs(.5 - self.fastclock.frac))
                         # # sat = int(255 * ((1 + math.sin(self.fastclock.frac * 2 * math.pi)) / 2))
-
-                        # if self.threestep == 0:
-                        #     sat = 255
-                        # elif self.threestep == 1:
-                        #     sat = 150
-                        # elif self.threestep == 2:
-                        #     sat = 40
-                        # elif self.threestep == 3:
-                        #     sat = 150
 
                         if self.strobe:
                             # sat = 0
@@ -383,4 +372,175 @@ class Sparks(Matrix):
 
 
         self._last_frac = self.fastclock.frac
+
+
+
+class EmberFireball:
+    def __init__(self, strip, size, start_frac, hue=None):
+        self.strip = strip
+        self.size = size
+        self.start_frac = start_frac  # clock time at launch time
+        self.hue = hue
+        self.frac = 0  # % down the strip, updated from update
+
+        self._max_frac = start_frac
+        self._min_frac = start_frac
+
+        self._looped = False
+        self._last_frac = start_frac
+        self.ded = False
+
+    def update(self, curr_frac):
+        if not self._looped and (curr_frac < self._last_frac or curr_frac <
+                                 self.start_frac):
+            self._looped = True
+        if curr_frac > self.start_frac and self._looped:
+            self.ded = True
+
+        if curr_frac == self.start_frac:
+            self.frac = 0
+        elif curr_frac > self.start_frac:
+            self.frac = curr_frac - self.start_frac
+        else:
+            self.frac = 1 - self.start_frac + curr_frac
+        if self.ded and self.frac > 0:
+            self.frac += 1
+
+        self._last_frac = curr_frac
+
+class Embers(Matrix):
+    """Comet with a trail of glowing embers."""
+    def __init__(self, *args,
+                 bpm=10,
+                 multiple=1,
+                 fade=0.9,
+                 **kwds):
+
+        super().__init__(*args, **kwds)
+        # time to send a fireball down the strip
+        self.clock = Clock(bpm, multiple)
+        # launch twice as fast as it takes to complete the strip
+        self.launchclock = self.clock.subclock(1, 4)
+        self.fade = fade
+        self.balls = []
+
+        self.embers = {}
+
+        self._last_frac = 0
+
+    def fade_embers(self):
+        ded = []
+        hi, lo = 1.5, .45
+        for xy in self.embers:
+            v, h = self.embers[xy]
+            fade = lo + (hi - lo) * random.random()
+            new_v = min(255, int(v * fade))
+            if new_v == 0:
+                ded.append(xy)
+            self.embers[xy] = (new_v, h)
+        for xy in ded:
+            del self.embers[xy]
+
+    # # fades pixel at [i,j] by self.fade
+    # def fade_pixel_random(self, i, j):
+    #     hi, lo = 1.5, .45
+    #     old = self.layout.get(i, j)
+    #     if old != (0,0,0):
+    #         fade = lo + (hi - lo) * random.random()
+    #         self.layout.set(
+    #             i, j,
+    #             [math.floor(x * fade) for x in old]
+    #         )
+
+    def step(self, amt=1):
+        self.clock.update()
+
+        sparkprob = .75
+        startbright = 128
+
+        hi = 255
+        lo = 20
+
+        # Clock rolled over, launch a fireball
+        if self._last_frac > self.launchclock.frac:
+            self.balls.append(EmberFireball(
+                random.randint(0, self.layout.height - 1),
+                44,
+                self.clock.frac,
+                random.randint(0, 255)
+            ))
+
+        vals = [[0 for x in range(self.layout.width)] for y in range(self.layout.height)]
+        hues = [[0 for x in range(self.layout.width)] for y in range(self.layout.height)]
+
+        dead_balls = []
+        for i, fb in enumerate(self.balls):
+            fb.update(self.clock.frac)
+            width = self.layout.width
+            v = [0] * width
+            head = int(width * fb.frac)
+            if head <= self.layout.width - 1:
+                v[head] = 255
+                if random.random() < sparkprob:
+                    self.embers[(head, fb.strip)] = (startbright, fb.hue)
+            # tail should be gone at this point
+            elif head - fb.size >= self.layout.width:
+                dead_balls.append(i)
+                continue
+
+            for i in range(min(fb.size, head)):
+                if head - i <= self.layout.width - 1:
+                    v[head - i] = int(hi - (i * (hi - lo) / fb.size))
+
+            # copy this ball's vals to the combined vals arr, set the hue for
+            # all pixels with non-0 val to this ball's hue
+            for i in range(len(v)):
+                vals[fb.strip][i] = max(vals[fb.strip][i], v[i])
+                if vals[fb.strip][i] > 0:
+                    hues[fb.strip][i] = fb.hue
+
+        for i, b in enumerate(dead_balls):
+            del self.balls[b - i]
+
+        # draw fireball and embers
+        for y in range(self.layout.height):
+            for x in range(self.layout.width):
+                ember_val, ember_hue = self.embers.get((x, y), (0, 0))
+                if ember_val > 0:
+                    self.layout.setHSV(x, y, (ember_hue, 255, max(vals[y][x], ember_val)))
+                else:
+                    self.layout.setHSV(x, y, (hues[y][x], 255, vals[y][x]))
+
+        self.fade_embers()
+        self._last_frac = self.launchclock.frac
+
+    # def old(self, amt=1):
+    #     leader_size = 8
+    #     # how white (1 full white)
+    #     hw = .4
+
+    #     stepscale = 7 / 8
+    #     eff_step = int(self._step * stepscale)
+    #     for i in range(self.layout.width):
+    #         # print(self._step, self.layout.width, self._step % self.layout.width)
+    #         do_light = eff_step % self.layout.width == i
+    #         for j in range(self.layout.height):
+    #             # color = (255,255,255)
+    #             color = self.palette(int(255 * i / self.layout.width))
+    #             # color = self.palette(random.randint(0, 255))
+    #             if do_light:
+    #                 # leading white lights
+    #                 for k in range(leader_size, 0, -1):
+    #                     if i + k < self.layout.width:
+    #                         self.layout.set(i + k, j,
+    #                             blend((255, 255, 255), color,
+    #                                   hw * k / leader_size))
+    #                 self.layout.set(i, j, color)
+    #             self.fade_pixel_random(i, j)
+
+    #     if self._step > int(1 / stepscale) + 1 and eff_step == 0:
+    #         self._step = 0
+    #     self._step += amt
+
+
 

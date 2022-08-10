@@ -67,12 +67,19 @@ animation:
     #   palette:
     #     colors: rainbow
 
-    - typename: bach.Wave
-      name: Wave
+    - typename: bach.Embers
+      name: Embers
       run:
-        fps: 120
+        fps: 100
       palette:
         colors: rainbow
+
+    # - typename: bach.Wave
+    #   name: Wave
+    #   run:
+    #     fps: 120
+    #   palette:
+    #     colors: rainbow
 
     # - typename: bach.Sparks
     #   name: Sparks
