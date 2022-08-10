@@ -50,10 +50,10 @@ class Entry(Matrix):
             overlay.update_sliders(self.rc.get("sliders"))
             self.shift = overlay.rs.percentage * 3
 
-            if overlay.l1.released():
+            if overlay.t1.released():
                 self.shift += 20
 
-            if overlay.l2.released():
+            if overlay.t2.released():
                 self.shift -= 20
 
         #self.set_palette("rainbow")

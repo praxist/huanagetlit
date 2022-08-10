@@ -17,7 +17,7 @@ l1 o  o  o  o  o  o  o  r1
 
 OVERLAY_TRACKPAD_TOP_LEFT = (12, 8)
 OVERLAY_TRACKPAD_BOT_RIGHT = (172, 99)
-MIN_BUT_FORCE = 50
+MIN_BUT_FORCE = 20
 BUTTONS = {
     "l1": (5, 90),
     "l2": (5, 77),
