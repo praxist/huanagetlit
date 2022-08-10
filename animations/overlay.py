@@ -1,13 +1,21 @@
+import time
+
 UP = 0
 DOWN = 1
+
+class Slider:
+    def __init__(self, name):
+        self.name = name
+        self.percentage = 0
+
 
 class Button:
     def __init__(self, name):
         self.name = name
         self.last_up = 0
         self.last_down = 0
-        self.previous_update = 0
-        self.last_update = 0
+        self.previous_update = time.time()
+        self.last_update = time.time()
 
     def held(self):
         # check the last time button was down was more recent than last frame
@@ -16,7 +24,9 @@ class Button:
     def released(self):
         # check the last time button was registered in both up and down states
         # since last frame
-        return self.last_up > self.previous_update and self.last_down > self.previous_update
+        if self.last_up > self.previous_update and self.last_down > self.previous_update - (self.last_update - self.previous_update) / 2 and self.last_up > self.last_down:
+            print("released")
+            return True
 
     def update(self, last_up, last_down, now):
         self.previous_update = self.last_update
@@ -41,6 +51,8 @@ r1 = Button("r1")
 r2 = Button("r2")
 r3 = Button("r3")
 r4 = Button("r4")
+rs = Slider("rs")
+ls = Slider("ls")
 buttons = {
     "l1": l1,
     "l2": l2,
@@ -60,6 +72,18 @@ buttons = {
     "r3": r3,
     "r4": r4,
 }
+sliders = {
+    "rs": rs,
+    "ls": ls,
+}
+
+def update_sliders(dat):
+    sliders_dat = dat.split(",")
+    for slider_dat in sliders_dat:
+        name, percent = slider_dat.split("-")
+        percent = int(percent)
+        sliders[name].percentage = percent
+
 
 def update_buttons(dat, now):
     buttons_dat = dat.split(",")

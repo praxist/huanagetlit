@@ -47,12 +47,16 @@ class Entry(Matrix):
         if self._step % 2 == 0:
             self.h = self.rc.hgetall("morph")
             overlay.update_buttons(self.rc.get("buttons"), now)
+            overlay.update_sliders(self.rc.get("sliders"))
+            self.shift = overlay.rs.percentage * 3
 
-        if overlay.l1.released():
-            self.shift += 20
+            if overlay.l1.released():
+                self.shift += 20
 
-        if overlay.l2.released():
-            self.shift -= 20
+            if overlay.l2.released():
+                self.shift -= 20
+
+        #self.set_palette("rainbow")
 
         for i in range(self.layout.height):
             v = self.h[str(i)]

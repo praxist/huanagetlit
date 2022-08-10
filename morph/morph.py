@@ -67,7 +67,7 @@ def writeFrame(frame, info):
     y_ratio = info.num_rows / LED_HEIGHT
 
     if OVERLAY:
-        button_dat = o.get_button_states(frame, info, DEBUG)
+        button_dat, slider_dat = o.get_overlay_states(frame, info, DEBUG)
 
     # Mapping each morph "force pixel" to actual LEDs
     # For each LED:
@@ -106,6 +106,7 @@ def writeFrame(frame, info):
     rc.hmset("morph", h)
     rc.set("morph_total_force", int(total_force))
     rc.set("buttons", button_dat)
+    rc.set("sliders", slider_dat)
 
 
 def closeSensel(frame):
