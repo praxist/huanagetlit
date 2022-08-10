@@ -148,6 +148,18 @@ class Wave(Matrix):
         # pos_perc = 1.0 - baseline_perc - wide_perc
         pos = [pos_perc * get_wave(x) for x in range(self.layout.width)]
 
+        # Color spread per strip. At 0 each strip is a single color, at 255
+        # each is a whole rainbow.
+        window = 20
+
+        # At 0 the strip colors are evenly distibuted in the rainbow, at 1 all
+        # strips have the same starting/ending colors.
+        squish = .8
+
+        # Make color gradient chance in the opposite direction of wave
+        # movement.
+        revx = True
+
         for x in range(self.layout.width):
             thing = baseline + wide + pos[x]
             if thing > 1:
@@ -161,18 +173,6 @@ class Wave(Matrix):
             # hi = int((baseline + wide + pos[x]) * 255)
 
             for y in range(self.layout.height):
-
-                # Color spread per strip. At 0 each strip is a single color, at
-                # 255 each is a whole rainbow.
-                window = 20
-
-                # At 0 the strip colors are evenly distibuted in the rainbow,
-                # at 1 all strips have the same starting/ending colors.
-                squish = .8
-
-                # Make color gradient chance in the opposite direction of wave
-                # movement.
-                revx = True
                 hue = (int((255 * self.colorclock.frac) +
                            ((1 - squish) * 255 * y / self.layout.height) +
                            ((1 - x if revx else x)
@@ -193,20 +193,14 @@ class Wave(Matrix):
                 # current actual pressure at the spot, used for strobe
                 actual_pressure = self._morph[y][x]
                 if pressure > 0:
-                    # pressure = 100
-                    # print("YES")
                     hue = (hue + 128) % 255
                     hi = int(255 / 100 * pressure)
-                    # hi = 255
                     sat = 255
                     # currently touching this spot (not fading out after touch)
                     if actual_pressure > 1:
-
-                        # sat = 40
-
+                        # (other strobe options)
                         # sat = 80 + int((255 - 80) * abs(.5 - self.fastclock.frac))
-                        # # sat = int(255 * ((1 + math.sin(self.fastclock.frac * 2 * math.pi)) / 2))
-
+                        # sat = int(255 * ((1 + math.sin(self.fastclock.frac * 2 * math.pi)) / 2))
                         if self.strobe:
                             # sat = 0
                             sat = 255 - int(255 / 100 * actual_pressure)
