@@ -216,6 +216,7 @@ class Sparks(Matrix):
         super().__init__(*args, **kwds)
         self.clock = Clock(bpm, multiple)
         self.fastclock = self.clock.subclock(1, 4)
+        self.colorclock = self.clock.subclock(24, 1)
 
         self.rc = redis.Redis()
         self._last_fetch = 0
@@ -323,8 +324,19 @@ class Sparks(Matrix):
                     self.layout.setHSV(x, y, (0, 0, 0))
                     self.blooded = False
 
+
+        window = 20
+        squish = .8
+        revx = True
+
         for y, x in self.sparks.keys():
-            self.layout.setHSV(x, y, (0, 0, self.sparks[(y, x)]))
+            # cribbed from Wave
+            hue = (int((255 * self.colorclock.frac) +
+                       ((1 - squish) * 255 * y / self.layout.height) +
+                       ((1 - x if revx else x)
+                        * window / self.layout.width))
+                   % 255)
+            self.layout.setHSV(x, y, (hue, 255, self.sparks[(y, x)]))
 
         delme = set()
         for k in self.sparks.keys():
