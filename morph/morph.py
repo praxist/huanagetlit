@@ -63,8 +63,14 @@ def writeFrame(frame, info):
 
     global rc
     global button_states
-    x_ratio = info.num_cols / LED_WIDTH
-    y_ratio = info.num_rows / LED_HEIGHT
+    x_padding = 0
+    y_padding = 0
+    if OVERLAY:
+        x_padding = o.OVERLAY_X_PADDING
+        y_padding = o.OVERLAY_X_PADDING
+
+    x_ratio = (info.num_cols - x_padding * 2) / LED_WIDTH
+    y_ratio = (info.num_rows - y_padding * 2) / LED_HEIGHT
 
     if OVERLAY:
         button_dat, slider_dat = o.get_overlay_states(frame, info, DEBUG)
@@ -78,13 +84,13 @@ def writeFrame(frame, info):
         h[i] = []
         for j in range(LED_WIDTH):
             if FLIP_X:
-                xstart = int(math.floor((LED_WIDTH - j - 1) * x_ratio))
-                xend = int(math.ceil((LED_WIDTH - j) * x_ratio))
+                xstart = int(math.floor((LED_WIDTH - j - 1) * x_ratio)) + x_padding
+                xend = int(math.ceil((LED_WIDTH - j) * x_ratio)) + x_padding
             else:
-                xstart = int(math.floor(j * x_ratio))
-                xend = int(math.ceil((j + 1) * x_ratio))
-            ystart = int(math.floor(i * y_ratio))
-            yend = int(math.ceil((i + 1) * y_ratio))
+                xstart = int(math.floor(j * x_ratio)) + x_padding
+                xend = int(math.ceil((j + 1) * x_ratio)) + x_padding
+            ystart = int(math.floor(i * y_ratio)) + y_padding
+            yend = int(math.ceil((i + 1) * y_ratio)) + y_padding
 
             value = 0
             count = 0
