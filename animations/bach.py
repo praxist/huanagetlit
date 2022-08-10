@@ -412,7 +412,6 @@ class Embers(Matrix):
 
     def step(self, amt=1):
         self.clock.update()
-        self.fetch()
 
         sparkprob = 75
         startbright = 128
@@ -422,14 +421,17 @@ class Embers(Matrix):
 
         # Clock rolled over, launch a fireball
         # if self._last_frac > self.launchclock.frac:
-        if overlay.t1.released():
-            self.balls.append(EmberFireball(
-                1,
-                # random.randint(0, self.layout.height - 1),
-                44,
-                self.clock.frac,
-                random.randint(0, 255)
-            ))
+        self.fetch()
+        for i, (_, b) in enumerate(overlay.tbuttons.items()):
+            if b.pressed:
+                self.balls.append(EmberFireball(
+                    i,
+                    # random.randint(0, self.layout.height - 1),
+                    44,
+                    self.clock.frac,
+                    random.randint(0, 255)
+                ))
+
 
         vals = [[0 for x in range(self.layout.width)] for y in range(self.layout.height)]
         hues = [[0 for x in range(self.layout.width)] for y in range(self.layout.height)]

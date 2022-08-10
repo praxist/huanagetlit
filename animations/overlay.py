@@ -1,4 +1,5 @@
 import time
+import math
 
 UP = 0
 DOWN = 1
@@ -16,23 +17,26 @@ class Button:
         self.last_down = 0
         self.previous_update = time.time()
         self.last_update = time.time()
-
-    def held(self):
-        # check the last time button was down was more recent than last frame
-        return self.last_down > self.previous_update
-
-    def released(self):
-        # check the last time button was registered in both up and down states
-        # since last frame
-        if self.last_up > self.previous_update and self.last_down > self.previous_update - (self.last_update - self.previous_update) / 2 and self.last_up > self.last_down:
-            print("released")
-            return True
+        self.pressed = False
+        self.released = False
+        self.held = False
 
     def update(self, last_up, last_down, now):
         self.previous_update = self.last_update
         self.last_update = now
         self.last_up = last_up
         self.last_down = last_down
+
+        self.held = self.last_down > self.previous_update
+
+        prev_pressed = self.pressed
+        self.pressed = self.last_down > self.previous_update and self.last_down > self.last_up and self.last_up > self.previous_update - (self.last_update - self.previous_update) * 2 and not prev_pressed
+        if self.pressed:
+            print("pressed")
+        prev_released = self.released
+        self.released = self.last_up > self.previous_update and self.last_down > self.previous_update - (self.last_update - self.previous_update) * 2 and self.last_up > self.last_down and not prev_released
+        if self.released:
+            print("released")
 
 l1 = Button("l1")
 l2 = Button("l2")
@@ -71,6 +75,17 @@ buttons = {
     "r2": r2,
     "r3": r3,
     "r4": r4,
+}
+tbuttons = {
+    "t1": t1,
+    "t2": t2,
+    "t3": t3,
+    "t4": t4,
+    "t5": t5,
+    "t6": t6,
+    "t7": t7,
+    "t8": t8,
+    #"t9": t9,
 }
 sliders = {
     "rs": rs,
