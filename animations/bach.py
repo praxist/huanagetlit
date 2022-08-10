@@ -215,12 +215,12 @@ class Sparks(Matrix):
                  **kwds):
         super().__init__(*args, **kwds)
         self.clock = Clock(bpm, multiple)
-        self.fastclock = self.clock.subclock(1, 4)
         self.colorclock = self.clock.subclock(24, 1)
 
-        self.rc = redis.Redis()
+        self.rc = redis.Redis(charset="utf=8", decode_responses=True)
         self._last_fetch = 0
         self._last_frac = 0
+        self.sattt = 0
 
         self.sparks = {}
         self.mtf = 0
@@ -230,9 +230,19 @@ class Sparks(Matrix):
                                    # bad at start
         self.stepcount = 0
 
+        # self.held = {i: 0 for i in range(self.layout.height + 1)}
+
     def fetch(self):
         ts, = map(int, self.rc.mget("ts"))
         self.mtf = int(self.rc.get("morph_total_force"))
+
+        # TODO: only one pattern can update at a time
+        # now = time.time()
+        # overlay.update_buttons(self.rc.get("buttons"), now)
+        # overlay.update_sliders(self.rc.get("sliders"))
+
+        self.sattt = int(2.5 * (100 - overlay.ls.percentage))
+        self.rs = int(1000 *  (90 - overlay.rs.percentage))
 
         if ts > self._last_fetch:
             self._last_fetch = ts
@@ -241,6 +251,16 @@ class Sparks(Matrix):
         self.stepcount += 1
         self.clock.update()
         self.fetch()
+
+        # if USE_TIME and self._last_frac > self.clock.frac:
+        #     dt.now().hour
+
+        # for i, (_, b) in enumerate(overlay.tbuttons.items()):
+        #     if b.held: # and self.held[i] < 100:
+        #         self.held[i] += 1
+        #     else:
+        #         self.held[i] = 0
+        # print(self.held)
 
         # log-ish pressure gradient
         levels = [100,
@@ -275,9 +295,12 @@ class Sparks(Matrix):
         wdex = [lmin + int((lmax - lmin) / len(levels) * i) for i in range(len(levels))]
         wdex.append(lmax)
 
+        # howmuch = self.mtf
+        howmuch = self.rs
+
         want = lmin
-        if self.mtf > levels[0]:
-            want = wdex[bisect.bisect(levels, self.mtf)]
+        if howmuch > levels[0]:
+            want = wdex[bisect.bisect(levels, howmuch)]
         wantnow = math.ceil((want - len(self.sparks))/ self.steps_per_clock)
         if wantnow > 0:
             for x in range(wantnow):
@@ -286,8 +309,12 @@ class Sparks(Matrix):
                 if k not in self.sparks:
                     self.sparks[k] = 255
 
+        if self._last_frac > self.clock.frac:
+            self.steps_per_clock = self.stepcount
+            self.stepcount = 0
+
         # # choppy version, adds N sparks on clock rollover (version above smears)
-        # if self._last_frac > self.fastclock.frac:
+        # if self._last_frac > self.clock.frac:
         #     self.steps_per_clock = self.stepcount
         #     print("steps per clock", self.steps_per_clock)
         #     self.stepcount = 0
@@ -336,7 +363,11 @@ class Sparks(Matrix):
                        ((1 - x if revx else x)
                         * window / self.layout.width))
                    % 255)
-            self.layout.setHSV(x, y, (hue, 255, self.sparks[(y, x)]))
+            bright = self.sparks[(y, x)]
+            # bright -= int(2.5 * self.held[y])
+            # if bright < 0:
+            #     bright = 0
+            self.layout.setHSV(x, y, (hue, self.sattt, bright))
 
         delme = set()
         for k in self.sparks.keys():
@@ -348,7 +379,7 @@ class Sparks(Matrix):
             self.layout.setHSV(x, y, (0, 0, 0))
             self.sparks.pop(k)
 
-        self._last_frac = self.fastclock.frac
+        self._last_frac = self.clock.frac
 
 
 class EmberFireball:
