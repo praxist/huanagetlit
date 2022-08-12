@@ -4,8 +4,14 @@ driver:
   typename: simpixel
   num: 800
 
-aliases:
-  bpa: BiblioPixelAnimations.matrix
+#drivers:
+#  - c_order: GRB
+#    num: 800
+#    ledtype: WS2811
+#    typename: .serial
+#    dev: /dev/tty.usbmodem60460901
+#aliases:
+#  bpa: BiblioPixelAnimations.matrix
 
 path: ./animations/
 
@@ -13,11 +19,9 @@ animation:
   typename: mixer
   levels: [1]
   animations:
-    - typename: entry.Entry
+    - typename: entry.HydroPump
       run:
-        fps: 60
-      palette:
-        colors: rainbow
+        fps: 100
 
 layout:
   typename: matrix

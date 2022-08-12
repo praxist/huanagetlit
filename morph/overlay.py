@@ -63,6 +63,7 @@ for s, _ in SLIDERS.items():
 
 def get_overlay_states(frame, info, debug):
     now = time.time()
+    interactive = False
 
     # check force coords of each button to determine state
     for name, coords in BUTTONS.items():
@@ -71,6 +72,7 @@ def get_overlay_states(frame, info, debug):
             if debug:
                 print(name)
             button_states[name][DOWN] = now
+            interactive = True
         else:
             button_states[name][UP] = now
 
@@ -90,6 +92,7 @@ def get_overlay_states(frame, info, debug):
         if max_force > MIN_SLI_FORCE:
             slider_length = ymax - ymin
             slider_states[name] = int((max_force_y - ymin) / slider_length * 100)
+            interactive = True
 
     # Write this to redis
     button_dat = ",".join(["%s-%s-%s" % (name, timestamps[UP], timestamps[DOWN]) for name, timestamps in
@@ -100,4 +103,4 @@ def get_overlay_states(frame, info, debug):
         print("Button data:\n%s" % button_dat)
         print("Slider data:\n%s" % slider_dat)
 
-    return button_dat, slider_dat
+    return button_dat, slider_dat, interactive

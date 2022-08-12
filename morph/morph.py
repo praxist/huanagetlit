@@ -22,6 +22,8 @@ LED_HEIGHT = 8
 
 FLIP_X = True
 
+last_interactive = time.time()
+
 def waitForEnter():
     global enter_pressed
     input("Press Enter to exit...")
@@ -55,14 +57,9 @@ def scale(force):
     return int(percent)
 
 def writeFrame(frame, info):
-    # print("nop")
-    # print(dir(frame))
-    # print(frame.contacts.contents)
-    # print(frame.n_contacts)
-    # print(dir(frame.contacts.contents))
-
     global rc
     global button_states
+    global last_interactive
     x_padding = 0
     y_padding = 0
     if OVERLAY:
@@ -71,9 +68,10 @@ def writeFrame(frame, info):
 
     x_ratio = (info.num_cols - x_padding * 2) / LED_WIDTH
     y_ratio = (info.num_rows - y_padding * 2) / LED_HEIGHT
+    interactive = False
 
     if OVERLAY:
-        button_dat, slider_dat = o.get_overlay_states(frame, info, DEBUG)
+        button_dat, slider_dat, interactive = o.get_overlay_states(frame, info, DEBUG)
 
     # Mapping each morph "force pixel" to actual LEDs
     # For each LED:
@@ -99,8 +97,10 @@ def writeFrame(frame, info):
                     value += frame.force_array[y * info.num_cols + x]
                     count += 1
 
-            value /= count
-            h[i].append(str(scale(value)))
+            value = scale(value / count)
+            if value > 10:
+                interactive = True
+            h[i].append(str(value))
 
         h[i] = ",".join(h[i])
 
@@ -113,6 +113,12 @@ def writeFrame(frame, info):
     rc.set("morph_total_force", int(total_force))
     rc.set("buttons", button_dat)
     rc.set("sliders", slider_dat)
+    if interactive:
+        rc.set("interactive", "1")
+        last_interactive = time.time()
+    # Considered not interactive if not touched in 10 seconds
+    elif time.time() - last_interactive > 10:
+        rc.set("interactive", "0")
 
 
 def closeSensel(frame):
