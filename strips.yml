@@ -42,19 +42,19 @@ animation:
     #   palette:
     #     colors: rainbow
 
-    - typename: bach.Sparks
-      name: Sparks
-      run:
-        fps: 100
-      palette:
-        colors: rainbow
-
-    # - typename: bach.Embers
-    #   name: Embers
+    # - typename: bach.Sparks
+    #   name: Sparks
     #   run:
     #     fps: 100
     #   palette:
     #     colors: rainbow
+
+    - typename: bach.Embers
+      name: Embers
+      run:
+        fps: 100
+      palette:
+        colors: rainbow
 
 layout:
   typename: matrix

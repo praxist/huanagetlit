@@ -6,8 +6,8 @@ import random
 import time
 
 from bibliopixel.animation.matrix import Matrix
-from strips import Clock
-from strips import SubClock
+from clock import Clock
+from clock import SubClock
 import overlay
 import redis
 
@@ -485,7 +485,7 @@ class Embers(Matrix):
         # time to send a fireball down the strip
         self.clock = Clock(bpm, multiple)
         # (X, Y): launch Y/X times as fast as it takes to complete the strip
-        self.launchclock = self.clock.subclock(1, 4)
+        self.launchclock = self.clock.subclock(2, 1)
         self.fade = fade
         self.balls = []
 
@@ -495,7 +495,8 @@ class Embers(Matrix):
 
     def fade_embers(self):
         ded = []
-        hi, lo = 1.5, .45
+        hi, lo = 1.35, .65
+        # hi, lo = 1.3, .48
         for xy in self.embers:
             v, h = self.embers[xy]
             fade = lo + (hi - lo) * random.random()
@@ -513,25 +514,34 @@ class Embers(Matrix):
 
     def step(self, amt=1):
         self.clock.update()
+        self.fetch()
 
-        sparkprob = 75
+        sparkprob = 100
         startbright = 128
 
         hi = 255
         lo = 20
 
         # Clock rolled over, launch a fireball
-        # if self._last_frac > self.launchclock.frac:
-        self.fetch()
-        for i, (_, b) in enumerate(overlay.tbuttons.items()):
-            if b.pressed:
-                self.balls.append(EmberFireball(
-                    i,
-                    # random.randint(0, self.layout.height - 1),
-                    44,
-                    self.clock.frac,
-                    random.randint(0, 255)
-                ))
+        if self._last_frac > self.launchclock.frac:
+            self.balls.append(EmberFireball(
+                0,
+                # random.randint(0, self.layout.height - 1),
+                44,
+                self.clock.frac,
+                random.randint(0, 255)
+            ))
+
+        # # pushed a button, launch a fireball
+        # for i, (_, b) in enumerate(overlay.tbuttons.items()):
+        #     if b.pressed:
+        #         self.balls.append(EmberFireball(
+        #             i,
+        #             # random.randint(0, self.layout.height - 1),
+        #             44,
+        #             self.clock.frac,
+        #             random.randint(0, 255)
+        #         ))
 
 
         vals = [[0 for x in range(self.layout.width)] for y in range(self.layout.height)]
@@ -560,7 +570,7 @@ class Embers(Matrix):
             # all pixels with non-0 val to this ball's hue
             for i in range(len(v)):
                 vals[fb.strip][i] = max(vals[fb.strip][i], v[i])
-                if vals[fb.strip][i] > 0:
+                if v[i] > 0:
                     hues[fb.strip][i] = fb.hue
 
         for i, b in enumerate(dead_balls):
