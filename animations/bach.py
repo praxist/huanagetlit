@@ -10,6 +10,7 @@ from clock import Clock
 from clock import SubClock
 import overlay
 import redis
+import shared
 
 import overlay
 import shared
@@ -94,25 +95,39 @@ class Wave(Matrix):
         self._stickymorph = [[0 for x in range(self.layout.width)] for y in range(self.layout.height)]
 
         self.strobe = True
+        self.on = False
+        self.level = 0
 
     def fetch(self):
         ts, = map(int, self.rc.mget("ts"))
         # ts = int(self.rc.mget("ts"))
 
-        try:
-            m = {k.decode(): v.decode() for k, v in self.rc.hgetall("morph").items()}
-            for y in range(self.layout.height):
-                self._morph[y] = [int(x) for x in  m[str(y)].split(',')]
-            # print(self._morph)
-        except Exception as ex:
-            print("Discarding morph data. Error: {}".format(ex))
+        # try:
+        #     m = {k.decode(): v.decode() for k, v in self.rc.hgetall("morph").items()}
+        #     for y in range(self.layout.height):
+        #         self._morph[y] = [int(x) for x in  m[str(y)].split(',')]
+        #     # print(self._morph)
+        # except Exception as ex:
+        #     print("Discarding morph data. Error: {}".format(ex))
+
+        overlay.update_forces()
+        self._morph = list(zip(*overlay.forces.vals))
+
+        self.on = bool(int(self.rc.get("pattern_wave") or 0))
+        level = int(self.rc.get("level_wave") or 255)
+        if not self.on:
+            level = 0
+        if self.level > level:
+            self.level -= 1
+        elif self.level < level:
+            self.level += 1
 
         if ts > self._last_fetch:
             self._last_fetch = ts
 
     def step(self, amt=1):
-        self.clock.update()
         self.fetch()
+        self.clock.update()
 
         self.strobe = not self.strobe
 
@@ -207,6 +222,7 @@ class Wave(Matrix):
                             # sat = 0
                             sat = 255 - int(255 / 100 * actual_pressure)
 
+                hi = min(hi, self.level)
                 self.layout.setHSV(x, y, (hue, sat, hi))
 
 
@@ -237,10 +253,14 @@ class Sparks(Matrix):
                                    # bad at start
 
         # self.held = {i: 0 for i in range(self.layout.height + 1)}
+        self.on = False
+        self.level = 255
 
     def fetch(self):
         ts, = map(int, self.rc.mget("ts"))
         self.mtf = int(self.rc.get("morph_total_force"))
+        self.on = bool(int(self.rc.get("pattern_sparks") or 0))
+        self.level = int(self.rc.get("level_sparks") or 255)
 
         # TODO: only one pattern can update at a time
         now = time.time()
@@ -254,9 +274,10 @@ class Sparks(Matrix):
             self._last_fetch = ts
 
     def step(self, amt=1):
+        self.fetch()
+
         self.stepcount += 1
         self.clock.update()
-        self.fetch()
 
         # if USE_TIME and self._last_frac > self.clock.frac:
         #     dt.now().hour
@@ -301,20 +322,66 @@ class Sparks(Matrix):
         wdex = [lmin + int((lmax - lmin) / len(levels) * i) for i in range(len(levels))]
         wdex.append(lmax)
 
-        howmuch = self.mtf
+        if self.on > 0:
+            howmuch = self.mtf
 
-        want = lmin
-        if howmuch > levels[0]:
-            want = wdex[bisect.bisect(levels, howmuch)]
-        wantnow = math.ceil((want - len(self.sparks)) / self.steps_per_clock)
-        print(want, len(self.sparks), wantnow)
-        if wantnow > 0:
-            # print(wantnow)
-            for x in range(wantnow):
-                k = (random.randint(0, self.layout.height),
-                     random.randint(0, self.layout.width))
-                if k not in self.sparks:
-                    self.sparks[k] = (255, self.faderate)
+            want = lmin
+            if howmuch > levels[0]:
+                want = wdex[bisect.bisect(levels, howmuch)]
+
+            # limit the total number of sparks based on level instead of
+            # brightness as in other patterns
+            if self.level < 255:
+                want = min(want, int(self.level * 255 / len(levels)))
+
+            wantnow = math.ceil((want - len(self.sparks)) / self.steps_per_clock)
+            if wantnow > 0:
+                for x in range(wantnow):
+                    k = (random.randint(0, self.layout.height),
+                         random.randint(0, self.layout.width))
+                    if k not in self.sparks:
+                        self.sparks[k] = (255, self.faderate)
+
+            if overlay.l1.pressed:
+                for x in range(self.layout.width):
+                    self.sparks[(0, x)] = (255, self.faderate)
+                    # self.sparks[(0, x)] = (255, 2 + int(random.random() * 2 * self.faderate))
+            if overlay.l2.pressed:
+                for x in range(self.layout.width):
+                    self.sparks[(1, x)] = (255, self.faderate)
+                    # self.sparks[(1, x)] = (255, 2 + int(random.random() * 2 * self.faderate))
+            if overlay.l3.pressed:
+                for x in range(self.layout.width):
+                    self.sparks[(2, x)] = (255, self.faderate)
+                    # self.sparks[(2, x)] = (255, 2 + int(random.random() * 2 * self.faderate))
+            if overlay.l4.pressed:
+                for x in range(self.layout.width):
+                    self.sparks[(3, x)] = (255, self.faderate)
+                    # self.sparks[(3, x)] = (255, 2 + int(random.random() * 2 * self.faderate))
+            if overlay.r1.pressed:
+                for x in range(self.layout.width):
+                    self.sparks[(4, x)] = (255, self.faderate)
+                    # self.sparks[(4, x)] = (255, 2 + int(random.random() * 2 * self.faderate))
+            if overlay.r2.pressed:
+                for x in range(self.layout.width):
+                    self.sparks[(5, x)] = (255, self.faderate)
+                    # self.sparks[(5, x)] = (255, 2 + int(random.random() * 2 * self.faderate))
+            if overlay.r3.pressed:
+                for x in range(self.layout.width):
+                    self.sparks[(6, x)] = (255, self.faderate)
+                    # self.sparks[(6, x)] = (255, 2 + int(random.random() * 2 * self.faderate))
+            if overlay.r4.pressed:
+                for x in range(self.layout.width):
+                    self.sparks[(7, x)] = (255, self.faderate)
+                    # self.sparks[(7, x)] = (255, 2 + int(random.random() * 2 * self.faderate))
+
+            # for i, (_, b) in enumerate(overlay.tbuttons.items()):
+            #     if b.pressed:
+            #         for x in range(self.layout.width):
+            #             self.sparks[(i, x)] = (255, self.faderate)
+            #             # if (i, x) not in self.sparks:
+            #             #     self.sparks[(i, x)] = (255, self.faderate)
+            #                 # self.sparks[(i, x)] = (255, int(random.random() * 2 * self.faderate))
 
         if self._last_frac > self.clock.frac:
             self.steps_per_clock = self.stepcount
@@ -365,11 +432,15 @@ class Sparks(Matrix):
 
         # cribbed from Wave
         def gethue(y, x):
-            return (int((255 * self.colorclock.frac) +
-                        ((1 - squish) * 255 * y / self.layout.height) +
-                        ((1 - x if revx else x)
-                         * window / self.layout.width))
-                    % 255)
+            if shared.interactive:
+                return (int((255 * self.colorclock.frac) +
+                            ((1 - squish) * 255 * y / self.layout.height) +
+                            ((1 - x if revx else x)
+                             * window / self.layout.width))
+                        % 255)
+            else:
+                print("not interactive!")
+                return ((x + 1) * (y + 1) * 37) % 256
 
         # for y, x in self.aftersparks.keys():
         #     ahue = gethue(y, x)
@@ -504,13 +575,15 @@ class Embers(Matrix):
         # time to send a fireball down the strip
         self.clock = Clock(bpm, multiple)
         # (X, Y): launch Y/X times as fast as it takes to complete the strip
-        self.launchclock = self.clock.subclock(2, 1)
+        self.launchclock = self.clock.subclock(2, 3)
         self.fade = fade
         self.balls = []
 
         self.embers = {}
 
         self._last_frac = 0
+        self.on = False
+        self.level = 0
 
     def fade_embers(self):
         ded = []
@@ -528,12 +601,19 @@ class Embers(Matrix):
 
     def fetch(self):
         now = time.time()
-        overlay.update_buttons(self.rc.get("buttons"), now)
-        overlay.update_sliders(self.rc.get("sliders"))
+        # overlay.update_buttons(self.rc.get("buttons"), now)
+        # overlay.update_sliders(self.rc.get("sliders"))
+        self.on = bool(int(self.rc.get("pattern_embers") or 0))
+        level = int(self.rc.get("level_embers") or 255)
+        if self.level > level:
+            self.level -= 1
+        elif self.level < level:
+            self.level += 1
 
     def step(self, amt=1):
-        self.clock.update()
         self.fetch()
+
+        self.clock.update()
 
         sparkprob = 100
         startbright = 128
@@ -541,26 +621,27 @@ class Embers(Matrix):
         hi = 255
         lo = 20
 
-        # Clock rolled over, launch a fireball
-        if self._last_frac > self.launchclock.frac:
-            self.balls.append(EmberFireball(
-                0,
-                # random.randint(0, self.layout.height - 1),
-                44,
-                self.clock.frac,
-                random.randint(0, 255)
-            ))
+        if self.on > 0:
+            # Clock rolled over, launch a fireball
+            if self._last_frac > self.launchclock.frac:
+                self.balls.append(EmberFireball(
+                    # 0,
+                    random.randint(0, self.layout.height - 1),
+                    30,
+                    self.clock.frac,
+                    random.randint(0, 255)
+                ))
 
-        # # pushed a button, launch a fireball
-        # for i, (_, b) in enumerate(overlay.tbuttons.items()):
-        #     if b.pressed:
-        #         self.balls.append(EmberFireball(
-        #             i,
-        #             # random.randint(0, self.layout.height - 1),
-        #             44,
-        #             self.clock.frac,
-        #             random.randint(0, 255)
-        #         ))
+            # # pushed a button, launch a fireball
+            # for i, (_, b) in enumerate(overlay.tbuttons.items()):
+            #     if b.pressed:
+            #         self.balls.append(EmberFireball(
+            #             i,
+            #             # random.randint(0, self.layout.height - 1),
+            #             44,
+            #             self.clock.frac,
+            #             random.randint(0, 255)
+            #         ))
 
 
         vals = [[0 for x in range(self.layout.width)] for y in range(self.layout.height)]
@@ -600,9 +681,10 @@ class Embers(Matrix):
             for x in range(self.layout.width):
                 ember_val, ember_hue = self.embers.get((x, y), (0, 0))
                 if ember_val > 0:
-                    self.layout.setHSV(x, y, (ember_hue, 255, max(vals[y][x], ember_val)))
+                    self.layout.setHSV(x, y, (ember_hue, 255,
+                                        min(max(vals[y][x], ember_val), self.level)))
                 else:
-                    self.layout.setHSV(x, y, (hues[y][x], 255, vals[y][x]))
+                    self.layout.setHSV(x, y, (hues[y][x], 255, min(vals[y][x], self.level)))
 
         self.fade_embers()
         self._last_frac = self.launchclock.frac
