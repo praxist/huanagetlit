@@ -1,17 +1,17 @@
 # Local config for testing patterns
 
-driver:
-  typename: simpixel
-  num: 800
+#driver:
+#  typename: simpixel
+#  num: 800
 
-#drivers:
-#  - c_order: GRB
-#    num: 800
-#    ledtype: WS2811
-#    typename: .serial
-#    dev: /dev/tty.usbmodem60460901
-#aliases:
-#  bpa: BiblioPixelAnimations.matrix
+drivers:
+  - c_order: GRB
+    num: 800
+    ledtype: WS2811
+    typename: .serial
+    dev: /dev/tty.usbmodem60460901
+aliases:
+  bpa: BiblioPixelAnimations.matrix
 
 path: ./animations/
 

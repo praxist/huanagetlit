@@ -161,7 +161,7 @@ Waterfalls that shoot from either end of the strip, terminating at the middle.
 """
 class HydroPump(Matrix):
     def __init__(self, *args,
-                 fade=0.90,
+                 fade=0.75,
                  pressure=2,
                  gravity=2,
                  pipe_rate=15,
@@ -204,20 +204,25 @@ class HydroPump(Matrix):
             if self._step % active_time == 0:
                 newly_active = int(self.layout.height / 2) + i * int((self._step / active_time) % (self.layout.height / 2)) + min(0, i)
                 c = abs((self.layout.height / 2) - newly_active + min(0, i))
-                self.waterfalls_left[newly_active].activate(hsv2rgb_spectrum((int(self._step * 0.5 + 40 * c), 190, 255)))
-                self.waterfalls_right[newly_active].activate(hsv2rgb_spectrum((int(self._step * 0.5 + 40 * c), 190, 255)))
+                self.waterfalls_left[newly_active].activate(hsv2rgb_spectrum((int(self._step * 0.5 + 40 * c), 190, 255)), self.pressure, self.gravity)
+                self.waterfalls_right[newly_active].activate(hsv2rgb_spectrum((int(self._step * 0.5 + 40 * c), 190, 255)), self.pressure, self.gravity)
+
+    def activate_waterfalls_interactive(self):
+        saturation = overlay.ls.percentage + 160
+        gravity = (overlay.rs.percentage / 100 * 8) + 1
+        for y in range(self.layout.height):
+            f = sum(overlay.forces.vals[y])
+            pressure = int(max(overlay.forces.vals[y]) * 8 / 100)
+            if f > 20:
+                self.waterfalls_left[y].activate(hsv2rgb_spectrum((int(self._step * 0.2 + f + 40 * y), saturation, 255)), pressure=pressure, gravity=gravity)
+                self.waterfalls_right[y].activate(hsv2rgb_spectrum((int(self._step * 0.2 + f + 40 * y), saturation, 255)), pressure=pressure, gravity=gravity)
 
     def step(self, amt=1):
         self.clock.update()
         overlay.update_forces()
+        overlay.update_sliders(self.rc.get("sliders"))
         if shared.interactive():
-            for y in range(self.layout.height):
-                f = sum(overlay.forces.vals[y])
-                pressure = int(max(overlay.forces.vals[y]) * 8 / 100)
-                gravity = pressure
-                if f > 20:
-                    self.waterfalls_left[y].activate(hsv2rgb_spectrum((int(self._step * 0.2 + f + 40 * y), 200, 255)), pressure=pressure, gravity=gravity)
-                    self.waterfalls_right[y].activate(hsv2rgb_spectrum((int(self._step * 0.2 + f + 40 * y), 200, 255)), pressure=pressure, gravity=gravity)
+            self.activate_waterfalls_interactive()
         else:
             self.activate_waterfalls()
         self.update_water_levels(self.waterfalls_left)
