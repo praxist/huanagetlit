@@ -19,7 +19,7 @@ path: ./animations/
 
 animation:
   typename: mixer
-  levels: [1]
+  levels: [1, 1, 1]
   animations:
 
     # - typename: entry.Entry
@@ -35,19 +35,19 @@ animation:
     #   palette:
     #     colors: rainbow
 
-    # - typename: bach.Wave
-    #   name: Wave
-    #   run:
-    #     fps: 100
-    #   palette:
-    #     colors: rainbow
+    - typename: bach.Wave
+      name: Wave
+      run:
+        fps: 100
+      palette:
+        colors: rainbow
 
-    # - typename: bach.Sparks
-    #   name: Sparks
-    #   run:
-    #     fps: 100
-    #   palette:
-    #     colors: rainbow
+    - typename: bach.Sparks
+      name: Sparks
+      run:
+        fps: 100
+      palette:
+        colors: rainbow
 
     - typename: bach.Embers
       name: Embers

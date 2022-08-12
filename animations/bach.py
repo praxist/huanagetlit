@@ -111,7 +111,8 @@ class Wave(Matrix):
         #     print("Discarding morph data. Error: {}".format(ex))
 
         overlay.update_forces()
-        self._morph = list(zip(*overlay.forces.vals))
+        self._morph = overlay.forces.vals
+        # self._morph = list(zip(*overlay.forces.vals))
 
         self.on = bool(int(self.rc.get("pattern_wave") or 0))
         level = int(self.rc.get("level_wave") or 255)
@@ -358,19 +359,19 @@ class Sparks(Matrix):
                 for x in range(self.layout.width):
                     self.sparks[(3, x)] = (255, self.faderate)
                     # self.sparks[(3, x)] = (255, 2 + int(random.random() * 2 * self.faderate))
-            if overlay.r1.pressed:
+            if overlay.r4.pressed:
                 for x in range(self.layout.width):
                     self.sparks[(4, x)] = (255, self.faderate)
                     # self.sparks[(4, x)] = (255, 2 + int(random.random() * 2 * self.faderate))
-            if overlay.r2.pressed:
+            if overlay.r3.pressed:
                 for x in range(self.layout.width):
                     self.sparks[(5, x)] = (255, self.faderate)
                     # self.sparks[(5, x)] = (255, 2 + int(random.random() * 2 * self.faderate))
-            if overlay.r3.pressed:
+            if overlay.r2.pressed:
                 for x in range(self.layout.width):
                     self.sparks[(6, x)] = (255, self.faderate)
                     # self.sparks[(6, x)] = (255, 2 + int(random.random() * 2 * self.faderate))
-            if overlay.r4.pressed:
+            if overlay.r1.pressed:
                 for x in range(self.layout.width):
                     self.sparks[(7, x)] = (255, self.faderate)
                     # self.sparks[(7, x)] = (255, 2 + int(random.random() * 2 * self.faderate))
@@ -514,10 +515,12 @@ class Sparks(Matrix):
 
 
 class EmberFireball:
-    def __init__(self, strip, size, start_frac, button, hue=None):
+    # def __init__(self, strip, size, start_frac, button, hue=None):
+    def __init__(self, strip, size, start_frac, hue=None):
         self.strip = strip
-        self._size = size
-        self.start_frac = -1  # doesnt launch until button released
+        self.size = size
+        self.start_frac = start_frac  # clock time at launch time
+        # self.start_frac = -1  # doesnt launch until button released
         self.hue = hue
         self.frac = 0  # % down the strip, updated from update
 
@@ -527,15 +530,16 @@ class EmberFireball:
         self._looped = False
         self._last_frac = start_frac
         self.ded = False
+        # print(self.start_frac)
 
-        self.button = button
-        self.launched = False
-        # how much size increments on every update call where button is held
-        self.power_increase_rate = 1
+        # self.button = button
+        # self.launched = False
+        # # how much size increments on every update call where button is held
+        # self.power_increase_rate = 1
 
-    @property
-    def size(self):
-        return int(self._size)
+    # @property
+    # def size(self):
+    #     return int(self._size)
 
     def update(self, curr_frac):
         if not self._looped and (curr_frac < self._last_frac or curr_frac <
@@ -544,24 +548,16 @@ class EmberFireball:
         if curr_frac > self.start_frac and self._looped:
             self.ded = True
 
-        if not self.launched:
-            if self.button.released:
-                self.launched = True
-                self.start_frac = curr_frac
-            else:
-                self._size += self.power_increase_rate
-
+        if curr_frac == self.start_frac:
+            self.frac = 0
+        elif curr_frac > self.start_frac:
+            self.frac = curr_frac - self.start_frac
         else:
-            if curr_frac == self.start_frac:
-                self.frac = 0
-            elif curr_frac > self.start_frac:
-                self.frac = curr_frac - self.start_frac
-            else:
-                self.frac = 1 - self.start_frac + curr_frac
-            if self.ded and self.frac > 0:
-                self.frac += 1
+            self.frac = 1 - self.start_frac + curr_frac
+        if self.ded and self.frac > 0:
+            self.frac += 1
 
-            self._last_frac = curr_frac
+        self._last_frac = curr_frac
 
 class Embers(Matrix):
     """Comet with a trail of glowing embers."""
@@ -575,7 +571,7 @@ class Embers(Matrix):
         # time to send a fireball down the strip
         self.clock = Clock(bpm, multiple)
         # (X, Y): launch Y/X times as fast as it takes to complete the strip
-        self.launchclock = self.clock.subclock(2, 3)
+        self.launchclock = self.clock.subclock(3, 1)
         self.fade = fade
         self.balls = []
 
@@ -583,19 +579,35 @@ class Embers(Matrix):
 
         self._last_frac = 0
         self.on = False
-        self.level = 0
+        self.level = 255
+
+        self.frames_done = set()
+        self.rdex = 0
 
     def fade_embers(self):
         ded = []
-        hi, lo = 1.35, .65
+
         # hi, lo = 1.3, .48
+
         for xy in self.embers:
-            v, h = self.embers[xy]
+            v, h, age = self.embers[xy]
+
+            if age < 10:
+                hi, lo = 1.30, .75
+            elif 10 < age < 20:
+                hi, lo = 1.25, .70
+            elif 20 < age < 30:
+                hi, lo = 1.20, .65
+            elif 30 < age < 40:
+                hi, lo = 1.15, .60
+            else:
+                hi, lo = 1.05, .55
+
             fade = lo + (hi - lo) * random.random()
             new_v = min(255, int(v * fade))
             if new_v == 0:
                 ded.append(xy)
-            self.embers[xy] = (new_v, h)
+            self.embers[xy] = (new_v, h, age + 1)
         for xy in ded:
             del self.embers[xy]
 
@@ -621,27 +633,114 @@ class Embers(Matrix):
         hi = 255
         lo = 20
 
+        # animation script in the form:
+        # - time in clock cycle to launch
+        # - strips to launch
+        # - hue
+        reel = (
+            (
+                (.1, {0, 7}, 0),
+                (.2, {1, 6}, 20),
+                (.3, {2, 5}, 40),
+                (.4, {3, 4}, 60),
+                # (.5, set(), 0),
+            ),
+            (
+                (.1, {3, 4}, 30),
+                (.2, {2, 5}, 50),
+                (.3, {1, 6}, 70),
+                (.4, {0, 7}, 90),
+                # (.5, set(), 0),
+            ),
+            (
+                (.05, {0,}, 90),
+                (.10, {1,}, 100),
+                (.15, {2,}, 110),
+                (.20, {3,}, 120),
+                (.25, {4,}, 130),
+                (.30, {5,}, 140),
+                (.35, {6,}, 150),
+                (.40, {7,}, 160),
+                # (.5, set(), 0),
+            ),
+            (
+                (.10, {7,}, 140),
+                (.15, {6,}, 150),
+                (.20, {5,}, 160),
+                (.25, {4,}, 170),
+                (.30, {3,}, 180),
+                (.35, {2,}, 190),
+                (.40, {1,}, 200),
+                (.45, {0,}, 210),
+                # (.5, set(), 0),
+            ),
+            (
+                (0, {0, 1, 2, 3, 4, 5, 6, 7}, 220),
+                (.2, {0, 1, 2, 3, 4, 5, 6, 7}, 50),
+                (.4, {0, 1, 2, 3, 4, 5, 6, 7}, 220),
+                (.6, {0, 1, 2, 3, 4, 5, 6, 7}, 50),
+                (.8, {0, 1, 2, 3, 4, 5, 6, 7}, 220),
+            ),
+            (
+                (0, {0, 1, 2, 3, 4, 5, 6, 7}, 250),
+                (.2, {0, 1, 2, 3, 4, 5, 6, 7}, 80),
+                (.4, {0, 1, 2, 3, 4, 5, 6, 7}, 250),
+                (.6, {0, 1, 2, 3, 4, 5, 6, 7}, 80),
+                (.8, {0, 1, 2, 3, 4, 5, 6, 7}, 250),
+            ),
+            # (
+            #     (0, {0, 1, 2, 3, 4, 5, 6, 7}, 100),
+            #     (.125, {0, 1, 2, 3, 4, 5, 6, 7}, 220),
+            #     (.25, {0, 1, 2, 3, 4, 5, 6, 7}, 100),
+            #     (.375, {0, 1, 2, 3, 4, 5, 6, 7}, 220),
+            #     (.5, {0, 1, 2, 3, 4, 5, 6, 7}, 100),
+            #     (.625, {0, 1, 2, 3, 4, 5, 6, 7}, 220),
+            #     (.75, {0, 1, 2, 3, 4, 5, 6, 7}, 100),
+            #     (.875, {0, 1, 2, 3, 4, 5, 6, 7}, 220),
+            #     # (.9, set(), 0),
+            # ),
+        )
+
+        reeltimes = [[t for t, v, h in r] for r in reel]
+
         if self.on > 0:
+
+            frame = bisect.bisect(reeltimes[self.rdex], self.launchclock.frac)
+            if frame not in self.frames_done and frame < len(reel[self.rdex]):
+                for strip in reel[self.rdex][frame][1]:
+                    self.balls.append(EmberFireball(
+                        strip,
+                        30,
+                        self.clock.frac,
+                        reel[self.rdex][frame][2]
+                    ))
+                self.frames_done.add(frame)
+
+
             # Clock rolled over, launch a fireball
             if self._last_frac > self.launchclock.frac:
-                self.balls.append(EmberFireball(
-                    # 0,
-                    random.randint(0, self.layout.height - 1),
-                    30,
-                    self.clock.frac,
-                    random.randint(0, 255)
-                ))
 
-            # # pushed a button, launch a fireball
-            # for i, (_, b) in enumerate(overlay.tbuttons.items()):
-            #     if b.pressed:
-            #         self.balls.append(EmberFireball(
-            #             i,
-            #             # random.randint(0, self.layout.height - 1),
-            #             44,
-            #             self.clock.frac,
-            #             random.randint(0, 255)
-            #         ))
+                self.frames_done = set()
+                self.rdex = (self.rdex + 1) % len(reel)
+
+                # self.balls.append(EmberFireball(
+                #     # 0,
+                #     random.randint(0, self.layout.height - 1),
+                #     30,
+                #     self.clock.frac,
+                #     random.randint(0, 255)
+                # ))
+
+            # pushed a button, launch a fireball
+            for i, b in enumerate(overlay.lrbuttons.values()):
+                if b.pressed:
+                    self.balls.append(EmberFireball(
+                        i,
+                        # random.randint(0, self.layout.height - 1),
+                        44,
+                        self.clock.frac,
+                        random.randint(0, 255)
+                    ))
 
 
         vals = [[0 for x in range(self.layout.width)] for y in range(self.layout.height)]
@@ -656,7 +755,7 @@ class Embers(Matrix):
             if head <= self.layout.width - 1:
                 v[head] = 255
                 if random.randint(0, 99) < sparkprob:
-                    self.embers[(head, fb.strip)] = (startbright, fb.hue)
+                    self.embers[(head, fb.strip)] = (startbright, fb.hue, 0)
             # tail should be gone at this point
             elif head - fb.size >= self.layout.width:
                 dead_balls.append(i)
@@ -679,7 +778,7 @@ class Embers(Matrix):
         # draw fireball and embers
         for y in range(self.layout.height):
             for x in range(self.layout.width):
-                ember_val, ember_hue = self.embers.get((x, y), (0, 0))
+                ember_val, ember_hue, _ = self.embers.get((x, y), (0, 0, 0))
                 if ember_val > 0:
                     self.layout.setHSV(x, y, (ember_hue, 255,
                                         min(max(vals[y][x], ember_val), self.level)))

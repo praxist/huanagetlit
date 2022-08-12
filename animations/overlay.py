@@ -1,3 +1,4 @@
+from collections import OrderedDict
 import shared
 import time
 import math
@@ -92,6 +93,16 @@ sliders = {
     "rs": rs,
     "ls": ls,
 }
+lrbuttons = OrderedDict((
+    ("l1", l1),
+    ("l2", l2),
+    ("l3", l3),
+    ("l4", l4),
+    ("r4", r4),
+    ("r3", r3),
+    ("r2", r2),
+    ("r1", r1),
+))
 
 def update_sliders(dat):
     sliders_dat = dat.split(",")
