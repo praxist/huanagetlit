@@ -103,35 +103,55 @@ class Confetti(Matrix):
 
 # Internal structure for HydroPump
 class Waterfall:
-    def __init__(self, max_level, starting_level=0, build_brightness=False):
+    def __init__(self, max_level, pressure, gravity, starting_level=0, reverse_brightness=False):
         self.active = False
         self.rising = False
         self.starting_level = starting_level
         self.level = starting_level
         self.max_level = max_level
         self._color = 0
-        self.build_brightness = build_brightness
+        self.reverse_brightness = reverse_brightness
+        self.pressure = pressure
+        self.gravity = gravity
 
     @property
     def color(self):
-        brightness = int(self.level / self.max_level * 255)
+        if self.reverse_brightness:
+            brightness = 255 - int(self.level / self.max_level * 255)
+        else:
+            brightness = int(self.level / self.max_level * 255)
+            if not self.rising:
+                brightness = 255
         return color_scale(self._color, brightness)
 
 
-    def activate(self, color):
-        self.active = True
-        self.rising = True
-        self._color = color
-        self.level = self.starting_level
+    def activate(self, color, pressure=0, gravity=0):
+        if pressure == 0:
+            pressure = self.pressure
+        if gravity == 0:
+            gravity = self.gravity
+        if self.active:
+            if not self.rising:
+                self._color = color
+                self.level = self.starting_level
+                self.pressure = pressure
+                self.gravity = gravity
+        else:
+            self.active = True
+            self.rising = True
+            self._color = color
+            self.level = self.starting_level
+            self.pressure = pressure
+            self.gravity = gravity
 
-    def update(self, pressure, gravity):
+    def update(self):
         if self.rising:
-            self.level += pressure
+            self.level += self.pressure
             if self.level >= self.max_level:
                 self.rising = False
         else:
             if self.level > 1:
-                self.level -= int(gravity)
+                self.level -= int(self.gravity)
             else:
                 self.active = False
 
@@ -144,7 +164,7 @@ class HydroPump(Matrix):
                  fade=0.90,
                  pressure=2,
                  gravity=2,
-                 pipe_rate=20,
+                 pipe_rate=15,
                  **kwds):
 
         # Fades previously lit pixels by a percentage
@@ -170,27 +190,34 @@ class HydroPump(Matrix):
         super().__init__(*args, **kwds)
 
         for i in range(self.layout.height):
-            self.waterfalls_left.append(Waterfall(self.layout.width/2, starting_level=0))
-            self.waterfalls_right.append(Waterfall(self.layout.width/2, starting_level=0))
+            self.waterfalls_left.append(Waterfall(self.layout.width/2, self.pressure, self.gravity, starting_level=0))
+            self.waterfalls_right.append(Waterfall(self.layout.width/2, self.pressure, self.gravity, starting_level=0))
 
     def update_water_levels(self, waterfalls):
         # how long to stay at peak water level
         for w in waterfalls:
-            w.update(self.pressure, self.gravity)
+            w.update()
 
     def activate_waterfalls(self):
         for i in [-1, 1]:
             active_time = int(self.layout.width / 2 * (self.pressure + self.gravity) / self.pipe_rate)
             if self._step % active_time == 0:
                 newly_active = int(self.layout.height / 2) + i * int((self._step / active_time) % (self.layout.height / 2)) + min(0, i)
-
-                self.waterfalls_left[newly_active].activate(hsv2rgb_spectrum((int(self._step * 0.2 + 40 * newly_active), 200, 255)))
-                self.waterfalls_right[newly_active].activate(hsv2rgb_spectrum((int(self._step * 0.2 + 40 * newly_active), 200, 255)))
+                c = abs((self.layout.height / 2) - newly_active + min(0, i))
+                self.waterfalls_left[newly_active].activate(hsv2rgb_spectrum((int(self._step * 0.5 + 40 * c), 190, 255)))
+                self.waterfalls_right[newly_active].activate(hsv2rgb_spectrum((int(self._step * 0.5 + 40 * c), 190, 255)))
 
     def step(self, amt=1):
         self.clock.update()
+        overlay.update_forces()
         if shared.interactive():
-            pass
+            for y in range(self.layout.height):
+                f = sum(overlay.forces.vals[y])
+                pressure = int(max(overlay.forces.vals[y]) * 8 / 100)
+                gravity = pressure
+                if f > 20:
+                    self.waterfalls_left[y].activate(hsv2rgb_spectrum((int(self._step * 0.2 + f + 40 * y), 200, 255)), pressure=pressure, gravity=gravity)
+                    self.waterfalls_right[y].activate(hsv2rgb_spectrum((int(self._step * 0.2 + f + 40 * y), 200, 255)), pressure=pressure, gravity=gravity)
         else:
             self.activate_waterfalls()
         self.update_water_levels(self.waterfalls_left)
@@ -198,6 +225,7 @@ class HydroPump(Matrix):
 
         for y in range(self.layout.height):
             for x in range(self.layout.width):
+                # outside to inside
                 if self.waterfalls_left[y].active and x < self.waterfalls_left[y].level:
                     self.layout.set(x, y, self.waterfalls_left[y].color)
                 elif self.waterfalls_right[y].active and x >= self.layout.width - self.waterfalls_right[y].level:
@@ -207,5 +235,12 @@ class HydroPump(Matrix):
                         fade_pixel(self.fade, self.layout ,x, y)
                     else:
                         self.layout.set(x, y, (0,0,0))
+                """
+                # inside to outside
+                if self.waterfalls_left[y].active and x < self.layout.width / 2 - self.waterfalls_left[y].level:
+                    self.layout.set(x, y, self.waterfalls_left[y].color)
+                elif self.waterfalls_right[y].active and x >= self.layout.width / 2 + self.waterfalls_right[y].level:
+                    self.layout.set(x, y, self.waterfalls_right[y].color)
+                """
 
         self._step += amt

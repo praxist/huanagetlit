@@ -19,7 +19,7 @@ animation:
   typename: mixer
   levels: [1]
   animations:
-    - typename: entry.Entry
+    - typename: entry.HydroPump
       run:
         fps: 100
 

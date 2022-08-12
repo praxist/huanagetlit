@@ -116,12 +116,12 @@ class Forces:
         self.width = width
         self.height = height
         self.vals = []
-        tmp = [0] * height
-        for i in range(width):
+        tmp = [0] * width
+        for i in range(height):
             self.vals.append(tmp.copy())
 
     def get(self, x, y):
-        return self.vals[x][y]
+        return self.vals[y][x]
 
 forces = Forces(WIDTH, HEIGHT)
 
@@ -133,4 +133,4 @@ def update_forces(width=WIDTH, height=HEIGHT):
         a = v.split(",")
         for j in range(width):
             val = int(a[j])
-            forces.vals[j][i] = val
+            forces.vals[i][j] = val

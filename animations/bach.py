@@ -11,6 +11,8 @@ from clock import SubClock
 import overlay
 import redis
 
+import overlay
+import shared
 
 class Id(Matrix):
     """ID strips"""
@@ -86,7 +88,7 @@ class Wave(Matrix):
         self.slowclock2 = self.clock.subclock(4, 1)
         self.colorclock = self.clock.subclock(24, 1)
 
-        self.rc = redis.Redis()
+        self.rc = shared.rc
         self._last_fetch = 0
         self._morph = [[0 for x in range(self.layout.width)] for y in range(self.layout.height)]
         self._stickymorph = [[0 for x in range(self.layout.width)] for y in range(self.layout.height)]
@@ -217,7 +219,7 @@ class Sparks(Matrix):
         self.clock = Clock(bpm, multiple)
         self.colorclock = self.clock.subclock(40, 1)
 
-        self.rc = redis.Redis(charset="utf=8", decode_responses=True)
+        self.rc = shared.rc
         self._last_fetch = 0
         self._last_frac = 0
         self.sattt = 0
@@ -441,10 +443,10 @@ class Sparks(Matrix):
 
 
 class EmberFireball:
-    def __init__(self, strip, size, start_frac, hue=None):
+    def __init__(self, strip, size, start_frac, button, hue=None):
         self.strip = strip
-        self.size = size
-        self.start_frac = start_frac  # clock time at launch time
+        self._size = size
+        self.start_frac = -1  # doesnt launch until button released
         self.hue = hue
         self.frac = 0  # % down the strip, updated from update
 
@@ -455,6 +457,15 @@ class EmberFireball:
         self._last_frac = start_frac
         self.ded = False
 
+        self.button = button
+        self.launched = False
+        # how much size increments on every update call where button is held
+        self.power_increase_rate = 1
+
+    @property
+    def size(self):
+        return int(self._size)
+
     def update(self, curr_frac):
         if not self._looped and (curr_frac < self._last_frac or curr_frac <
                                  self.start_frac):
@@ -462,16 +473,24 @@ class EmberFireball:
         if curr_frac > self.start_frac and self._looped:
             self.ded = True
 
-        if curr_frac == self.start_frac:
-            self.frac = 0
-        elif curr_frac > self.start_frac:
-            self.frac = curr_frac - self.start_frac
-        else:
-            self.frac = 1 - self.start_frac + curr_frac
-        if self.ded and self.frac > 0:
-            self.frac += 1
+        if not self.launched:
+            if self.button.released:
+                self.launched = True
+                self.start_frac = curr_frac
+            else:
+                self._size += self.power_increase_rate
 
-        self._last_frac = curr_frac
+        else:
+            if curr_frac == self.start_frac:
+                self.frac = 0
+            elif curr_frac > self.start_frac:
+                self.frac = curr_frac - self.start_frac
+            else:
+                self.frac = 1 - self.start_frac + curr_frac
+            if self.ded and self.frac > 0:
+                self.frac += 1
+
+            self._last_frac = curr_frac
 
 class Embers(Matrix):
     """Comet with a trail of glowing embers."""
