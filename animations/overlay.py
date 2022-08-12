@@ -1,3 +1,4 @@
+import shared
 import time
 import math
 
@@ -105,3 +106,31 @@ def update_buttons(dat, now):
     for button_dat in buttons_dat:
         name, ts_up, ts_down = button_dat.split("-")
         buttons[name].update(float(ts_up), float(ts_down), now)
+
+# TODO: better way of hardcoding this
+WIDTH = 100
+HEIGHT = 8
+
+class Forces:
+    def __init__(self, width, height):
+        self.width = width
+        self.height = height
+        self.vals = []
+        tmp = [0] * height
+        for i in range(width):
+            self.vals.append(tmp.copy())
+
+    def get(self, x, y):
+        return self.vals[x][y]
+
+forces = Forces(WIDTH, HEIGHT)
+
+def update_forces(width=WIDTH, height=HEIGHT):
+    global forces
+    h = shared.rc.hgetall("morph")
+    for i in range(height):
+        v = h[str(i)]
+        a = v.split(",")
+        for j in range(width):
+            val = int(a[j])
+            forces.vals[j][i] = val

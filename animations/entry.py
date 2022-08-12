@@ -50,9 +50,10 @@ class Entry(Matrix):
 
     def step(self, amt=1):
         color = self.palette(self._step)
-        now = time.time()
 
         if self._step % 2 == 0:
+            overlay.update_forces()
+            now = time.time()
             self.h = self.rc.hgetall("morph")
             overlay.update_buttons(self.rc.get("buttons"), now)
             overlay.update_sliders(self.rc.get("sliders"))
@@ -67,10 +68,8 @@ class Entry(Matrix):
         #self.set_palette("rainbow")
 
         for i in range(self.layout.height):
-            v = self.h[str(i)]
-            a = v.split(",")
             for j in range(self.layout.width):
-                val = int(a[j]) * 2
+                val = overlay.forces.get(j, i) * 2
 
                 if val > 0:
                     self.layout.set(j, i, self.palette(val + self.shift))

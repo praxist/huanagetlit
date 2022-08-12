@@ -22,7 +22,8 @@ LED_HEIGHT = 8
 
 FLIP_X = True
 
-last_interactive = time.time()
+INTERACTIVE_TIMEOUT=6
+last_interactive = time.time() - INTERACTIVE_TIMEOUT
 
 def waitForEnter():
     global enter_pressed
@@ -98,7 +99,7 @@ def writeFrame(frame, info):
                     count += 1
 
             value = scale(value / count)
-            if value > 10:
+            if value > INTERACTIVE_TIMEOUT:
                 interactive = True
             h[i].append(str(value))
 
