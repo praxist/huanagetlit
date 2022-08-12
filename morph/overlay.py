@@ -91,7 +91,7 @@ def get_overlay_states(frame, info, debug):
         # if force exceeds min, update slider data as a percentage of where the max force registered in the slider
         if max_force > MIN_SLI_FORCE:
             slider_length = ymax - ymin
-            slider_states[name] = int((max_force_y - ymin) / slider_length * 100)
+            slider_states[name] = 100 - int((max_force_y - ymin) / slider_length * 100)
             interactive = True
 
     # Write this to redis
