@@ -215,7 +215,7 @@ class Sparks(Matrix):
                  **kwds):
         super().__init__(*args, **kwds)
         self.clock = Clock(bpm, multiple)
-        self.colorclock = self.clock.subclock(24, 1)
+        self.colorclock = self.clock.subclock(40, 1)
 
         self.rc = redis.Redis(charset="utf=8", decode_responses=True)
         self._last_fetch = 0
@@ -226,9 +226,13 @@ class Sparks(Matrix):
         self.mtf = 0
         self.blooded = False
 
-        self.steps_per_clock = 10  # sane default, blame this if pattern looks
-                                   # bad at start
+        # self.aftersparks = {}
+
         self.stepcount = 0
+
+        self.faderate = 4
+        self.steps_per_clock = 24  # sane default, blame this if pattern looks
+                                   # bad at start
 
         # self.held = {i: 0 for i in range(self.layout.height + 1)}
 
@@ -237,12 +241,12 @@ class Sparks(Matrix):
         self.mtf = int(self.rc.get("morph_total_force"))
 
         # TODO: only one pattern can update at a time
-        # now = time.time()
-        # overlay.update_buttons(self.rc.get("buttons"), now)
-        # overlay.update_sliders(self.rc.get("sliders"))
+        now = time.time()
+        overlay.update_buttons(self.rc.get("buttons"), now)
+        overlay.update_sliders(self.rc.get("sliders"))
 
         self.sattt = int(2.5 * (100 - overlay.ls.percentage))
-        self.rs = int(1000 *  (90 - overlay.rs.percentage))
+        self.faderate = 2 + int((20 - 2) * (100 - overlay.rs.percentage) / 100)
 
         if ts > self._last_fetch:
             self._last_fetch = ts
@@ -295,19 +299,20 @@ class Sparks(Matrix):
         wdex = [lmin + int((lmax - lmin) / len(levels) * i) for i in range(len(levels))]
         wdex.append(lmax)
 
-        # howmuch = self.mtf
-        howmuch = self.rs
+        howmuch = self.mtf
 
         want = lmin
         if howmuch > levels[0]:
             want = wdex[bisect.bisect(levels, howmuch)]
-        wantnow = math.ceil((want - len(self.sparks))/ self.steps_per_clock)
+        wantnow = math.ceil((want - len(self.sparks)) / self.steps_per_clock)
+        print(want, len(self.sparks), wantnow)
         if wantnow > 0:
+            # print(wantnow)
             for x in range(wantnow):
                 k = (random.randint(0, self.layout.height),
                      random.randint(0, self.layout.width))
                 if k not in self.sparks:
-                    self.sparks[k] = 255
+                    self.sparks[k] = (255, self.faderate)
 
         if self._last_frac > self.clock.frac:
             self.steps_per_clock = self.stepcount
@@ -331,7 +336,7 @@ class Sparks(Matrix):
         #         k = (random.randint(0, self.layout.height),
         #              random.randint(0, self.layout.width))
         #         if k not in self.sparks:
-        #             self.sparks[k] = 255
+        #             self.sparks[k] = 255  # (TODO update for faderate)
 
         # Red warning flash
         startwarn = 80000
@@ -352,32 +357,85 @@ class Sparks(Matrix):
                     self.blooded = False
 
 
-        window = 20
-        squish = .8
-        revx = True
+        window = 50
+        squish = .9
+        revx = False
 
-        for y, x in self.sparks.keys():
-            # cribbed from Wave
-            hue = (int((255 * self.colorclock.frac) +
-                       ((1 - squish) * 255 * y / self.layout.height) +
-                       ((1 - x if revx else x)
-                        * window / self.layout.width))
-                   % 255)
-            bright = self.sparks[(y, x)]
+        # cribbed from Wave
+        def gethue(y, x):
+            return (int((255 * self.colorclock.frac) +
+                        ((1 - squish) * 255 * y / self.layout.height) +
+                        ((1 - x if revx else x)
+                         * window / self.layout.width))
+                    % 255)
+
+        # for y, x in self.aftersparks.keys():
+        #     ahue = gethue(y, x)
+        #     _, abright, _ = self.aftersparks[(y, x)]
+        #     self.layout.setHSV(x, y, (ahue, self.sattt, abright))
+
+        for y, x in (self.sparks.keys()):
+            hue = gethue(y, x)
+            bright, faderate = self.sparks[(y, x)]
+
+            # reverse fade
+            # bright = 255 - bright
+
             # bright -= int(2.5 * self.held[y])
             # if bright < 0:
             #     bright = 0
+
             self.layout.setHSV(x, y, (hue, self.sattt, bright))
 
-        delme = set()
+        af_soon = .9
+        af_bright = .4
+
+        delsparks = set()
         for k in self.sparks.keys():
-            self.sparks[k] = self.sparks[k] - 10
-            if self.sparks[k] < 20:
-                delme.add(k)
-        for k in delme:
+            bright, faderate = self.sparks[k]
+            self.sparks[k] = (bright - faderate, faderate)
+
+            # # add aftersparks
+            # if int(af_soon * 255) < bright < int(af_soon * 255) + faderate:
+            #     n = int(af_bright * 255)
+            #     y, x = k
+            #     if x > 0:
+            #         self.aftersparks[(y, x - 1)] = 'l', n, n
+            #     if x < self.layout.width - 1:
+            #         self.aftersparks[(y, x + 1)] = 'l', n, n
+
+            if bright < faderate:
+                delsparks.add(k)
+        for k in delsparks:
             y, x = k
             self.layout.setHSV(x, y, (0, 0, 0))
             self.sparks.pop(k)
+
+        # addafs = {}
+        # delafs = set()
+        # for k in self.aftersparks.keys():
+        #     lr, abr, ast = self.aftersparks[k]
+        #     abr -= faderate  # TODO: faderate
+        #     self.aftersparks[k] = lr, abr, ast
+        #     if max(0, int(ast - 3 * faderate)) < abr < int(ast - 2 * faderate) + faderate:
+        #         print("got ast: {}".format(ast))
+        #         y, x = k
+        #         n = int(af_bright * ast)
+        #         if x > 0 and lr == 'l':
+        #             # print("OK - l")
+        #             addafs[(y, x - 1)] = ('l', n, n)
+        #         if x < self.layout.width - 1 and lr == 'r':
+        #             # print("OK - r")
+        #             addafs[(y, x + 1)] = ('r', n, n)
+        #     elif abr < 20:
+        #         delafs.add(k)
+        # for k in addafs:
+        #     self.aftersparks[k] = addafs[k]
+        # for k in delafs:
+        #     y, x = k
+        #     if k not in self.sparks:
+        #         self.layout.setHSV(x, y, (0, 0, 0))
+        #     self.aftersparks.pop(k)
 
         self._last_frac = self.clock.frac
 
