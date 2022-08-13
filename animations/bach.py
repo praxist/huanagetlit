@@ -1,5 +1,6 @@
 from __future__ import division
 
+from datetime import datetime as dt
 import bisect
 import math
 import random
@@ -14,6 +15,72 @@ import shared
 
 import overlay
 import shared
+
+class MCP(Matrix):
+    """Master control program."""
+
+    def __init__(self, *args, **kwds):
+        super().__init__(*args, **kwds)
+        self.rc = shared.rc
+
+        now = dt.now()
+
+        self.t1 = False
+        self.t1_hm = (1, 29)
+        self.t1_duration = 60
+        self.t1_dt = dt(now.year, now.month, now.day, self.t1_hm[0], self.t1_hm[1])
+
+        self.t2 = False
+        self.t2_hm = (1, 35)
+        self.t2_duration = 60
+        self.t2_dt = dt(now.year, now.month, now.day, self.t2_hm[0], self.t2_hm[1])
+
+    def step(self, amt=1):
+        now = dt.now()
+
+        if self.t1:
+            elapsed = int((now - self.t1_dt).total_seconds())
+            if elapsed > self.t1_duration:
+                self.rc.set("pattern_sparks", 0)
+                self.rc.set("level_sparks", 0)
+                self.t1 = False
+            else:
+                howmuch = int(elapsed / self.t1_duration * 255)
+                self.rc.set("level_wave", howmuch)
+                self.rc.set("level_sparks", 255 - howmuch)
+        else:
+            if (now.hour, now.minute) == self.t1_hm:
+                self.rc.set("pattern_wave", 1)
+                self.rc.set("level_wave", 0)
+                self.t1 = True
+
+        if self.t2:
+            elapsed = int((now - self.t2_dt).total_seconds())
+            if elapsed > self.t2_duration:
+                self.rc.set("pattern_wave", 0)
+                self.rc.set("level_wave", 0)
+                self.t2 = False
+            else:
+                howmuch = int(elapsed / self.t2_duration * 255)
+                self.rc.set("level_embers", howmuch)
+                self.rc.set("level_wave", 255 - howmuch)
+        else:
+            if (now.hour, now.minute) == self.t2_hm:
+                self.rc.set("pattern_embers", 1)
+                self.rc.set("level_embers", 0)
+                self.t2 = True
+
+        # change = (1, 15)
+
+        # if (now.hour, now.minute) == change:
+        #     if bool(int(self.rc.get("pattern_sparks"))):
+        #         print("sparks no wave yes")
+        #         self.rc.set("pattern_sparks", 0)
+        #         self.rc.set("level_sparks", 0)
+        #         self.rc.set("pattern_wave", 1)
+        #         self.rc.set("level_wave", 255)
+        #         print("DONE")
+
 
 class Id(Matrix):
     """ID strips"""
@@ -96,7 +163,7 @@ class Wave(Matrix):
 
         self.strobe = True
         self.on = False
-        self.level = 0
+        self.level = 255
 
     def fetch(self):
         ts, = map(int, self.rc.mget("ts"))
@@ -532,6 +599,8 @@ class EmberFireball:
         self.ded = False
         # print(self.start_frac)
 
+        self.last_head = 0  # total hack
+
         # self.button = button
         # self.launched = False
         # # how much size increments on every update call where button is held
@@ -583,6 +652,10 @@ class Embers(Matrix):
 
         self.frames_done = set()
         self.rdex = 0
+
+        self.paused = False
+        self.last_touch = 0
+        self.pausetime = 10
 
     def fade_embers(self):
         ded = []
@@ -703,33 +776,31 @@ class Embers(Matrix):
 
         reeltimes = [[t for t, v, h in r] for r in reel]
 
+        if self.paused:
+            if time.time() - self.last_touch > self.pausetime:
+                self.paused = False
+                print("UNPAUSED")
+
         if self.on > 0:
 
-            frame = bisect.bisect(reeltimes[self.rdex], self.launchclock.frac)
-            if frame not in self.frames_done and frame < len(reel[self.rdex]):
-                for strip in reel[self.rdex][frame][1]:
-                    self.balls.append(EmberFireball(
-                        strip,
-                        30,
-                        self.clock.frac,
-                        reel[self.rdex][frame][2]
-                    ))
-                self.frames_done.add(frame)
+            if not self.paused:
+                frame = bisect.bisect(reeltimes[self.rdex], self.launchclock.frac)
+                if frame not in self.frames_done and frame < len(reel[self.rdex]):
+                    for strip in reel[self.rdex][frame][1]:
+                        self.balls.append(EmberFireball(
+                            strip,
+                            30,
+                            self.clock.frac,
+                            reel[self.rdex][frame][2]
+                        ))
+                    self.frames_done.add(frame)
 
 
-            # Clock rolled over, launch a fireball
+            # Clock rolled over, switch to next animation in reel
             if self._last_frac > self.launchclock.frac:
 
                 self.frames_done = set()
                 self.rdex = (self.rdex + 1) % len(reel)
-
-                # self.balls.append(EmberFireball(
-                #     # 0,
-                #     random.randint(0, self.layout.height - 1),
-                #     30,
-                #     self.clock.frac,
-                #     random.randint(0, 255)
-                # ))
 
             # pushed a button, launch a fireball
             for i, b in enumerate(overlay.lrbuttons.values()):
@@ -741,6 +812,9 @@ class Embers(Matrix):
                         self.clock.frac,
                         random.randint(0, 255)
                     ))
+                    self.paused = True
+                    self.last_touch = time.time()
+                    print("PAUSED")
 
 
         vals = [[0 for x in range(self.layout.width)] for y in range(self.layout.height)]
@@ -756,6 +830,11 @@ class Embers(Matrix):
                 v[head] = 255
                 if random.randint(0, 99) < sparkprob:
                     self.embers[(head, fb.strip)] = (startbright, fb.hue, 0)
+                if head > fb.last_head:
+                    for h in range(fb.last_head, head):
+                        self.embers[(h, fb.strip)] = (startbright, fb.hue, 0)
+                fb.last_head = head
+
             # tail should be gone at this point
             elif head - fb.size >= self.layout.width:
                 dead_balls.append(i)
