@@ -19,21 +19,15 @@ path: ./animations/
 
 animation:
   typename: mixer
-  levels: [1, 1, 1]
+  levels: [0, 1, 1, 1, 1]
   animations:
 
-    # - typename: entry.Entry
-    #   run:
-    #     fps: 100
-    #   palette:
-    #     colors: rainbow
-
-    # - typename: bach.Id
-    #   name: Id
-    #   run:
-    #     fps: 100
-    #   palette:
-    #     colors: rainbow
+    - typename: bach.MCP
+      name: MCP
+      run:
+        fps: 100
+      palette:
+        colors: rainbow
 
     - typename: bach.Wave
       name: Wave
@@ -52,7 +46,14 @@ animation:
     - typename: bach.Embers
       name: Embers
       run:
-        fps: 100
+        fps: 60
+      palette:
+        colors: rainbow
+
+    - typename: entry.HydroPump
+      name: HydroPump
+      run:
+        fps: 60
       palette:
         colors: rainbow
 
