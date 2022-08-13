@@ -186,6 +186,10 @@ class HydroPump(Matrix):
         # one waterfall per strip starting from either end
         self.waterfalls_left = []
         self.waterfalls_right = []
+
+        # enable/disable and fade this animation
+        self.on = False
+        self.level = 255
         #The base class MUST be initialized by calling super like this
         super().__init__(*args, **kwds)
 
@@ -217,7 +221,7 @@ class HydroPump(Matrix):
                 self.waterfalls_left[y].activate(hsv2rgb_spectrum((int(self._step * 0.2 + f + 40 * y), saturation, 255)), pressure=pressure, gravity=gravity)
                 self.waterfalls_right[y].activate(hsv2rgb_spectrum((int(self._step * 0.2 + f + 40 * y), saturation, 255)), pressure=pressure, gravity=gravity)
         for idx, (_, b) in enumerate(overlay.sidebuttons.items()):
-            if b.held:
+            if b.held and self.on:
                 self.add_confetti(idx, saturation)
 
     def add_confetti(self, y, saturation):
@@ -229,8 +233,10 @@ class HydroPump(Matrix):
         now = time.time()
         self.clock.update()
         overlay.update_forces()
-        overlay.update_sliders(self.rc.get("sliders"))
-        overlay.update_buttons(self.rc.get("buttons"), now)
+        # overlay.update_sliders(self.rc.get("sliders"))
+        # overlay.update_buttons(self.rc.get("buttons"), now)
+        self.on = bool(int(self.rc.get("pattern_hydropump") or 0))
+        self.level = int(self.rc.get("level_hydropump") or 255)
         if shared.interactive():
             self.activate_waterfalls_interactive()
         else:
@@ -242,12 +248,19 @@ class HydroPump(Matrix):
             for x in range(self.layout.width):
                 # outside to inside
                 if self.waterfalls_left[y].active and x < self.waterfalls_left[y].level:
-                    self.layout.set(x, y, self.waterfalls_left[y].color)
+                    if self.on:
+                        self.layout.set(x, y, self.waterfalls_left[y].color)
+                        if self.level < 255:
+                            fade_pixel(self.level / 255, self.layout, x, y)
+
                 elif self.waterfalls_right[y].active and x >= self.layout.width - self.waterfalls_right[y].level:
-                    self.layout.set(x, y, self.waterfalls_right[y].color)
+                    if self.on:
+                        self.layout.set(x, y, self.waterfalls_right[y].color)
+                        if self.level < 255:
+                            fade_pixel(self.level / 255, self.layout, x, y)
                 else:
                     if self.fade < 1:
-                        fade_pixel(self.fade, self.layout ,x, y)
+                        fade_pixel(self.fade, self.layout, x, y)
                     else:
                         self.layout.set(x, y, (0,0,0))
                 """

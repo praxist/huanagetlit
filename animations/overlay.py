@@ -33,12 +33,12 @@ class Button:
 
         prev_pressed = self.pressed
         self.pressed = self.last_down > self.previous_update and self.last_down > self.last_up and self.last_up > self.previous_update - (self.last_update - self.previous_update) * 2 and not prev_pressed
-        if self.pressed:
-            print("pressed")
+        # if self.pressed:
+        #     print("pressed")
         prev_released = self.released
         self.released = self.last_up > self.previous_update and self.last_down > self.previous_update - (self.last_update - self.previous_update) * 2 and self.last_up > self.last_down and not prev_released
-        if self.released:
-            print("released")
+        # if self.released:
+        #     print("released")
 
 l1 = Button("l1")
 l2 = Button("l2")

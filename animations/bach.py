@@ -9,7 +9,6 @@ import time
 from bibliopixel.animation.matrix import Matrix
 from clock import Clock
 from clock import SubClock
-import overlay
 import redis
 import shared
 
@@ -31,9 +30,14 @@ class MCP(Matrix):
         self.t1_dt = dt(now.year, now.month, now.day, self.t1_hm[0], self.t1_hm[1])
 
         self.t2 = False
-        self.t2_hm = (1, 35)
+        self.t2_hm = (2, 21)
         self.t2_duration = 60
         self.t2_dt = dt(now.year, now.month, now.day, self.t2_hm[0], self.t2_hm[1])
+
+        self.t3 = False
+        self.t3_hm = (2, 23)
+        self.t3_duration = 60
+        self.t3_dt = dt(now.year, now.month, now.day, self.t3_hm[0], self.t3_hm[1])
 
     def step(self, amt=1):
         now = dt.now()
@@ -62,13 +66,29 @@ class MCP(Matrix):
                 self.t2 = False
             else:
                 howmuch = int(elapsed / self.t2_duration * 255)
-                self.rc.set("level_embers", howmuch)
+                self.rc.set("level_hydropump", howmuch)
                 self.rc.set("level_wave", 255 - howmuch)
         else:
             if (now.hour, now.minute) == self.t2_hm:
+                self.rc.set("pattern_hydropump", 1)
+                self.rc.set("level_hydropump", 0)
+                self.t2 = True
+
+        if self.t3:
+            elapsed = int((now - self.t3_dt).total_seconds())
+            if elapsed > self.t3_duration:
+                self.rc.set("pattern_hydropump", 0)
+                self.rc.set("level_hydropump", 0)
+                self.t3 = False
+            else:
+                howmuch = int(elapsed / self.t3_duration * 255)
+                self.rc.set("level_embers", howmuch)
+                self.rc.set("level_hydropump", 255 - howmuch)
+        else:
+            if (now.hour, now.minute) == self.t3_hm:
                 self.rc.set("pattern_embers", 1)
                 self.rc.set("level_embers", 0)
-                self.t2 = True
+                self.t3 = True
 
         # change = (1, 15)
 
@@ -186,9 +206,13 @@ class Wave(Matrix):
         if not self.on:
             level = 0
         if self.level > level:
-            self.level -= 1
+            self.level -= 10
+            if self.level < level:
+                self.level = level
         elif self.level < level:
-            self.level += 1
+            self.level += 10
+            if self.level > level:
+                self.level = level
 
         if ts > self._last_fetch:
             self._last_fetch = ts
@@ -335,8 +359,8 @@ class Sparks(Matrix):
         overlay.update_buttons(self.rc.get("buttons"), now)
         overlay.update_sliders(self.rc.get("sliders"))
 
-        self.sattt = int(2.5 * (100 - overlay.ls.percentage))
-        self.faderate = 2 + int((20 - 2) * (100 - overlay.rs.percentage) / 100)
+        self.sattt = int(2.5 * overlay.ls.percentage)
+        self.faderate = 2 + int((20 - 2) * overlay.rs.percentage / 100)
 
         if ts > self._last_fetch:
             self._last_fetch = ts
@@ -384,7 +408,7 @@ class Sparks(Matrix):
                   100000,
                   ]
 
-        lmin = 40
+        lmin = 80
         lmax = self.layout.height * self.layout.width
 
         wdex = [lmin + int((lmax - lmin) / len(levels) * i) for i in range(len(levels))]
@@ -641,6 +665,7 @@ class Embers(Matrix):
         self.clock = Clock(bpm, multiple)
         # (X, Y): launch Y/X times as fast as it takes to complete the strip
         self.launchclock = self.clock.subclock(3, 1)
+        self.colorclock = self.clock.subclock(24, 1)
         self.fade = fade
         self.balls = []
 
@@ -691,9 +716,55 @@ class Embers(Matrix):
         self.on = bool(int(self.rc.get("pattern_embers") or 0))
         level = int(self.rc.get("level_embers") or 255)
         if self.level > level:
-            self.level -= 1
+            self.level -= 10
+            if self.level < level:
+                self.level = level
         elif self.level < level:
-            self.level += 1
+            self.level += 10
+            if self.level > level:
+                self.level = level
+
+    # TOTAL HACK that this is here, button presses aren't registering in MCP,
+    # no idea why
+    def only_sparks(self):
+        self.rc.set("pattern_sparks", 1)
+        self.rc.set("level_sparks", 255)
+        self.rc.set("pattern_wave", 0)
+        self.rc.set("level_wave", 0)
+        self.rc.set("pattern_embers", 0)
+        self.rc.set("level_embers", 0)
+        self.rc.set("pattern_hydropump", 0)
+        self.rc.set("level_hydropump", 0)
+
+    def only_wave(self):
+        self.rc.set("pattern_sparks", 0)
+        self.rc.set("level_sparks", 0)
+        self.rc.set("pattern_wave", 1)
+        self.rc.set("level_wave", 255)
+        self.rc.set("pattern_embers", 0)
+        self.rc.set("level_embers", 0)
+        self.rc.set("pattern_hydropump", 0)
+        self.rc.set("level_hydropump", 0)
+
+    def only_embers(self):
+        self.rc.set("pattern_sparks", 0)
+        self.rc.set("level_sparks", 0)
+        self.rc.set("pattern_wave", 0)
+        self.rc.set("level_wave", 0)
+        self.rc.set("pattern_embers", 1)
+        self.rc.set("level_embers", 255)
+        self.rc.set("pattern_hydropump", 0)
+        self.rc.set("level_hydropump", 0)
+
+    def only_hydropump(self):
+        self.rc.set("pattern_sparks", 0)
+        self.rc.set("level_sparks", 0)
+        self.rc.set("pattern_wave", 0)
+        self.rc.set("level_wave", 0)
+        self.rc.set("pattern_embers", 0)
+        self.rc.set("level_embers", 0)
+        self.rc.set("pattern_hydropump", 1)
+        self.rc.set("level_hydropump", 255)
 
     def step(self, amt=1):
         self.fetch()
@@ -705,6 +776,16 @@ class Embers(Matrix):
 
         hi = 255
         lo = 20
+
+        if overlay.t1.pressed:
+            self.only_sparks()
+        elif overlay.t2.pressed:
+            self.only_wave()
+        elif overlay.t3.pressed:
+            self.only_hydropump()
+        elif overlay.t7.pressed:
+            self.only_embers()
+
 
         # animation script in the form:
         # - time in clock cycle to launch
@@ -776,10 +857,10 @@ class Embers(Matrix):
 
         reeltimes = [[t for t, v, h in r] for r in reel]
 
+
         if self.paused:
             if time.time() - self.last_touch > self.pausetime:
                 self.paused = False
-                print("UNPAUSED")
 
         if self.on > 0:
 
@@ -814,7 +895,6 @@ class Embers(Matrix):
                     ))
                     self.paused = True
                     self.last_touch = time.time()
-                    print("PAUSED")
 
 
         vals = [[0 for x in range(self.layout.width)] for y in range(self.layout.height)]
