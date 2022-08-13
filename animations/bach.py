@@ -15,6 +15,9 @@ import shared
 import overlay
 import shared
 
+now = dt.now()
+FREEFORALL = dt(now.year, now.month, now.day, 7, 50)
+
 class MCP(Matrix):
     """Master control program."""
 
@@ -25,18 +28,18 @@ class MCP(Matrix):
         now = dt.now()
 
         self.t1 = False
-        self.t1_hm = (1, 29)
-        self.t1_duration = 60
+        self.t1_hm = (6, 45)
+        self.t1_duration = 150
         self.t1_dt = dt(now.year, now.month, now.day, self.t1_hm[0], self.t1_hm[1])
 
         self.t2 = False
-        self.t2_hm = (2, 21)
-        self.t2_duration = 60
+        self.t2_hm = (7, 15)
+        self.t2_duration = 150
         self.t2_dt = dt(now.year, now.month, now.day, self.t2_hm[0], self.t2_hm[1])
 
         self.t3 = False
-        self.t3_hm = (2, 23)
-        self.t3_duration = 60
+        self.t3_hm = (7, 45)
+        self.t3_duration = 150
         self.t3_dt = dt(now.year, now.month, now.day, self.t3_hm[0], self.t3_hm[1])
 
     def step(self, amt=1):
@@ -777,15 +780,14 @@ class Embers(Matrix):
         hi = 255
         lo = 20
 
-        if overlay.t1.pressed:
+        if overlay.t1.pressed and dt.now() > FREEFORALL:
             self.only_sparks()
-        elif overlay.t2.pressed:
+        elif overlay.t2.pressed and dt.now() > FREEFORALL:
             self.only_wave()
-        elif overlay.t3.pressed:
+        elif overlay.t3.pressed and dt.now() > FREEFORALL:
             self.only_hydropump()
-        elif overlay.t7.pressed:
+        elif overlay.t7.pressed and dt.now() > FREEFORALL:
             self.only_embers()
-
 
         # animation script in the form:
         # - time in clock cycle to launch
