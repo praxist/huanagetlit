@@ -89,6 +89,16 @@ tbuttons = {
     "t8": t8,
     #"t9": t9,
 }
+sidebuttons = {
+    "l1": l1,
+    "l2": l2,
+    "l3": l3,
+    "l4": l4,
+    "r1": r1,
+    "r2": r2,
+    "r3": r3,
+    "r4": r4,
+}
 sliders = {
     "rs": rs,
     "ls": ls,

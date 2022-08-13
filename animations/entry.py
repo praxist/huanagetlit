@@ -213,14 +213,24 @@ class HydroPump(Matrix):
         for y in range(self.layout.height):
             f = sum(overlay.forces.vals[y])
             pressure = int(max(overlay.forces.vals[y]) * 8 / 100)
-            if f > 20:
+            if f > 50:
                 self.waterfalls_left[y].activate(hsv2rgb_spectrum((int(self._step * 0.2 + f + 40 * y), saturation, 255)), pressure=pressure, gravity=gravity)
                 self.waterfalls_right[y].activate(hsv2rgb_spectrum((int(self._step * 0.2 + f + 40 * y), saturation, 255)), pressure=pressure, gravity=gravity)
+        for idx, (_, b) in enumerate(overlay.sidebuttons.items()):
+            if b.held:
+                self.add_confetti(idx, saturation)
+
+    def add_confetti(self, y, saturation):
+        for _ in range(4):
+            x = randrange(self.layout.width)
+            self.layout.set(x, y, hsv2rgb_spectrum((self._step * x, saturation, 255)))
 
     def step(self, amt=1):
+        now = time.time()
         self.clock.update()
         overlay.update_forces()
         overlay.update_sliders(self.rc.get("sliders"))
+        overlay.update_buttons(self.rc.get("buttons"), now)
         if shared.interactive():
             self.activate_waterfalls_interactive()
         else:
