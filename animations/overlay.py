@@ -130,7 +130,7 @@ def update_buttons(dat, now):
 
 # TODO: better way of hardcoding this
 WIDTH = 100
-HEIGHT = 8
+HEIGHT = 2
 
 class Forces:
     def __init__(self, width, height):
@@ -149,6 +149,8 @@ forces = Forces(WIDTH, HEIGHT)
 def update_forces(width=WIDTH, height=HEIGHT):
     global forces
     h = shared.rc.hgetall("morph")
+    if len(h) < height:
+        return
     for i in range(height):
         v = h[str(i)]
         a = v.split(",")

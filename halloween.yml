@@ -1,0 +1,65 @@
+# Actual config for physical project
+
+
+# driver:
+#   typename: simpixel
+#   num: 800
+
+drivers:
+  - c_order: GRB
+    num: 800
+    ledtype: WS2811
+    typename: .serial
+    dev: /dev/tty.usbmodem60460901
+
+aliases:
+  bpa: BiblioPixelAnimations.matrix
+
+path: ./animations/
+
+animation:
+  typename: mixer
+  levels: [0, 1, 1, 1, 1]
+  animations:
+
+    - typename: bach.MCP
+      name: MCP
+      run:
+        fps: 100
+      palette:
+        colors: rainbow
+
+    - typename: bach.Wave
+      name: Wave
+      run:
+        fps: 100
+      palette:
+        colors: rainbow
+
+    - typename: bach.Sparks
+      name: Sparks
+      run:
+        fps: 100
+      palette:
+        colors: rainbow
+
+    - typename: bach.Embers
+      name: Embers
+      run:
+        fps: 60
+      palette:
+        colors: rainbow
+
+    - typename: entry.HydroPump
+      name: HydroPump
+      run:
+        fps: 60
+      palette:
+        colors: rainbow
+
+layout:
+  typename: matrix
+  serpentine: false
+  width: 100
+  height: 2
+  brightness: 255

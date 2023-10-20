@@ -10,7 +10,7 @@ import bibliopixel as bp
 # Cheating to avoid passing layout to sub-animations
 WIDTH = 100
 # change this back after xmas?
-HEIGHT = 8
+HEIGHT = 2
 
 # Component animations to use with Combo
 ########################################

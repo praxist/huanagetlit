@@ -3,4 +3,4 @@
 DIR=$(dirname -- "$0")
 cd $DIR/..
 #pipenv run -- bp -s --loglevel frame strips.local.yml
-pipenv run -- bp -s strips.local.yml
+pipenv run -- bp -s halloween.local.yml

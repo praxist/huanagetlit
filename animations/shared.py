@@ -13,4 +13,5 @@ def fade_pixel(fade, layout, i, j):
         )
 
 def interactive():
-    return rc.get("interactive") == "1"
+    return True
+    #return rc.get("interactive") == "1"

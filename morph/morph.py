@@ -18,11 +18,11 @@ enter_pressed = False;
 rc = redis.Redis()
 
 LED_WIDTH = 100
-LED_HEIGHT = 8
+LED_HEIGHT = 2
 
 FLIP_X = True
 
-INTERACTIVE_TIMEOUT=6
+INTERACTIVE_TIMEOUT=2
 last_interactive = time.time() - INTERACTIVE_TIMEOUT
 
 def waitForEnter():
