@@ -167,8 +167,8 @@ class Bump(Matrix):
 
 class Wave(Matrix):
     def __init__(self, *args,
-                 bpm=100,
-                 multiple=1,
+                 bpm=30,
+                 multiple=2,
                  **kwds):
         super().__init__(*args, **kwds)
         self.clock = Clock(bpm, multiple)
@@ -323,8 +323,8 @@ class Wave(Matrix):
 
 class Sparks(Matrix):
     def __init__(self, *args,
-                 bpm=100,
-                 multiple=1,
+                 bpm=125,
+                 multiple=6,
                  **kwds):
         super().__init__(*args, **kwds)
         self.clock = Clock(bpm, multiple)
@@ -659,7 +659,7 @@ class Embers(Matrix):
     """Comet with a trail of glowing embers."""
     def __init__(self, *args,
                  bpm=10,
-                 multiple=1,
+                 multiple=4,
                  fade=0.9,
                  **kwds):
 
