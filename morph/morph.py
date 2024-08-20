@@ -22,7 +22,7 @@ LED_HEIGHT = 8
 
 FLIP_X = True
 
-INTERACTIVE_TIMEOUT=6
+INTERACTIVE_TIMEOUT=1
 last_interactive = time.time() - INTERACTIVE_TIMEOUT
 
 def waitForEnter():

@@ -658,7 +658,7 @@ class EmberFireball:
 class Embers(Matrix):
     """Comet with a trail of glowing embers."""
     def __init__(self, *args,
-                 bpm=10,
+                 bpm=40,
                  multiple=1,
                  fade=0.9,
                  **kwds):
@@ -786,7 +786,7 @@ class Embers(Matrix):
             self.only_wave()
         elif overlay.t3.pressed and dt.now() > FREEFORALL:
             self.only_hydropump()
-        elif overlay.t7.pressed and dt.now() > FREEFORALL:
+        elif overlay.t4.pressed and dt.now() > FREEFORALL:
             self.only_embers()
 
         # animation script in the form:

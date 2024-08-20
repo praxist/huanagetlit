@@ -246,6 +246,10 @@ class HydroPump(Matrix):
 
         for y in range(self.layout.height):
             for x in range(self.layout.width):
+                # hack because reasons and CE wedding
+                # voltage drop on data line?
+                if x > 85:
+                    x = 85
                 # outside to inside
                 if self.waterfalls_left[y].active and x < self.waterfalls_left[y].level:
                     if self.on:
