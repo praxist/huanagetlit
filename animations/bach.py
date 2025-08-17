@@ -189,7 +189,15 @@ class Wave(Matrix):
         self.level = 255
 
     def fetch(self):
-        ts, = map(int, self.rc.mget("ts"))
+        vals = self.rc.mget("ts")
+        ts = 0
+        if vals:
+            v = vals[0]
+            if v is not None:
+                try:
+                    ts = int(v)
+                except Exception:
+                    ts = 0
         # ts = int(self.rc.mget("ts"))
 
         # try:
@@ -352,8 +360,16 @@ class Sparks(Matrix):
         self.level = 255
 
     def fetch(self):
-        ts, = map(int, self.rc.mget("ts"))
-        self.mtf = int(self.rc.get("morph_total_force"))
+        vals = self.rc.mget("ts")
+        ts = 0
+        if vals:
+            v = vals[0]
+            if v is not None:
+                try:
+                    ts = int(v)
+                except Exception:
+                    ts = 0
+        self.mtf = int(self.rc.get("morph_total_force") or 0)
         self.on = bool(int(self.rc.get("pattern_sparks") or 0))
         self.level = int(self.rc.get("level_sparks") or 255)
 
@@ -664,6 +680,7 @@ class Embers(Matrix):
                  **kwds):
 
         super().__init__(*args, **kwds)
+        self.rc = shared.rc
         # time to send a fireball down the strip
         self.clock = Clock(bpm, multiple)
         # (X, Y): launch Y/X times as fast as it takes to complete the strip

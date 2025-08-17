@@ -38,6 +38,7 @@ class Entry(Matrix):
         self.shift = 0
 
         super().__init__(*args, **kwds)
+        self.rc = shared.rc
 
     # fades pixel at [i,j] by self.fade
     def fade_pixel(self, i, j):
@@ -192,6 +193,7 @@ class HydroPump(Matrix):
         self.level = 255
         #The base class MUST be initialized by calling super like this
         super().__init__(*args, **kwds)
+        self.rc = shared.rc
 
         for i in range(self.layout.height):
             self.waterfalls_left.append(Waterfall(self.layout.width/2, self.pressure, self.gravity, starting_level=0))
