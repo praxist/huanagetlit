@@ -912,6 +912,118 @@ class Embers(Matrix):
             # - inside-out (and vice versa)
             # - etc. Get wild!
 
+            # left-to-right sweep with shifting hue
+            (
+                (0.00, {0}, 0),
+                (0.12, {1}, 20),
+                (0.24, {2}, 40),
+                (0.36, {3}, 60),
+                (0.48, {4}, 80),
+                (0.60, {5}, 100),
+                (0.72, {6}, 120),
+                (0.84, {7}, 140),
+            ),
+
+            # ping-pong sweep (0->7 then 7->0 without repeating endpoints)
+            (
+                (0.00, {0}, 0),
+                (0.0625, {1}, 32),
+                (0.1250, {2}, 64),
+                (0.1875, {3}, 96),
+                (0.2500, {4}, 128),
+                (0.3125, {5}, 160),
+                (0.3750, {6}, 192),
+                (0.4375, {7}, 224),
+                (0.5000, {6}, 192),
+                (0.5625, {5}, 160),
+                (0.6250, {4}, 128),
+                (0.6875, {3}, 96),
+                (0.7500, {2}, 64),
+                (0.8125, {1}, 32),
+                (0.8750, {0}, 0),
+                (0.9375, {1}, 32),
+            ),
+
+            # dual runners (two strips chase around the ring order 0,2,4,6,1,3,5,7)
+            (
+                (0.00, {0, 4}, 20),
+                (0.125, {2, 6}, 50),
+                (0.250, {4, 0}, 80),
+                (0.375, {6, 2}, 110),
+                (0.500, {1, 5}, 140),
+                (0.625, {3, 7}, 170),
+                (0.750, {5, 1}, 200),
+                (0.875, {7, 3}, 230),
+            ),
+
+            # triple burst (three-adjacent groups wrap-around with shifting hue)
+            (
+                (0.00, {0, 1, 2}, 10),
+                (0.125, {1, 2, 3}, 40),
+                (0.250, {2, 3, 4}, 70),
+                (0.375, {3, 4, 5}, 100),
+                (0.500, {4, 5, 6}, 130),
+                (0.625, {5, 6, 7}, 160),
+                (0.750, {6, 7, 0}, 190),
+                (0.875, {7, 0, 1}, 220),
+            ),
+
+            # blossom: center-out grow then collapse
+            (
+                (0.00, {3, 4}, 200),
+                (0.125, {2, 3, 4, 5}, 220),
+                (0.250, {1, 2, 3, 4, 5, 6}, 240),
+                (0.375, {0, 1, 2, 3, 4, 5, 6, 7}, 8),
+                (0.500, {1, 2, 3, 4, 5, 6}, 28),
+                (0.625, {2, 3, 4, 5}, 48),
+                (0.750, {3, 4}, 68),
+                (0.875, {3, 4}, 88),
+            ),
+
+            # right-to-left sweep with complementary hue
+            (
+                (0.00, {7}, 200),
+                (0.12, {6}, 220),
+                (0.24, {5}, 240),
+                (0.36, {4}, 10),
+                (0.48, {3}, 30),
+                (0.60, {2}, 50),
+                (0.72, {1}, 70),
+                (0.84, {0}, 90),
+            ),
+
+            # inside-out pairs (center -> edges)
+            (
+                (0.00, {3, 4}, 30),
+                (0.20, {2, 5}, 60),
+                (0.40, {1, 6}, 90),
+                (0.60, {0, 7}, 120),
+                (0.80, {3, 4}, 150),
+            ),
+
+            # outside-in pairs (edges -> center)
+            (
+                (0.00, {0, 7}, 190),
+                (0.20, {1, 6}, 210),
+                (0.40, {2, 5}, 230),
+                (0.60, {3, 4}, 250),
+                (0.80, {0, 7}, 180),
+            ),
+
+            # alternating stripes with rolling rainbow
+            (
+                (0.00, {0, 2, 4, 6}, 0),
+                (0.10, {1, 3, 5, 7}, 32),
+                (0.20, {0, 2, 4, 6}, 64),
+                (0.30, {1, 3, 5, 7}, 96),
+                (0.40, {0, 2, 4, 6}, 128),
+                (0.50, {1, 3, 5, 7}, 160),
+                (0.60, {0, 2, 4, 6}, 192),
+                (0.70, {1, 3, 5, 7}, 224),
+                (0.80, {0, 2, 4, 6}, 255),
+                (0.90, {1, 3, 5, 7}, 16),
+            ),
+
         )
 
         reeltimes = [[t for t, v, h in r] for r in reel]
@@ -942,18 +1054,18 @@ class Embers(Matrix):
                 self.frames_done = set()
                 self.rdex = (self.rdex + 1) % len(reel)
 
-            # pushed a button, launch a fireball
-            for i, b in enumerate(overlay.lrbuttons.values()):
-                if b.pressed:
-                    self.balls.append(EmberFireball(
-                        i,
-                        # random.randint(0, self.layout.height - 1),
-                        44,
-                        self.clock.frac,
-                        random.randint(0, 255)
-                    ))
-                    self.paused = True
-                    self.last_touch = time.time()
+            # # pushed a button, launch a fireball
+            # for i, b in enumerate(overlay.lrbuttons.values()):
+            #     if b.pressed:
+            #         self.balls.append(EmberFireball(
+            #             i,
+            #             # random.randint(0, self.layout.height - 1),
+            #             44,
+            #             self.clock.frac,
+            #             random.randint(0, 255)
+            #         ))
+            #         self.paused = True
+            #         self.last_touch = time.time()
 
 
         vals = [[0 for x in range(self.layout.width)] for y in range(self.layout.height)]
