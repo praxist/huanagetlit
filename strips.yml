@@ -10,7 +10,6 @@ drivers:
     num: 800
     ledtype: WS2811
     typename: .serial
-    dev: /dev/tty.usbmodem60460901
 
 aliases:
   bpa: BiblioPixelAnimations.matrix
