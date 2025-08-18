@@ -675,9 +675,9 @@ class EmberFireball:
 class Embers(Matrix):
     """Comet with a trail of glowing embers."""
     def __init__(self, *args,
-                 bpm=10,
-                 multiple=4,
-                 fade=0.9,
+                 bpm=32,
+                 multiple=1,
+                 fade=0.1,
                  **kwds):
 
         super().__init__(*args, **kwds)
@@ -709,7 +709,7 @@ class Embers(Matrix):
         # hi, lo = 1.3, .48
 
         for xy in self.embers:
-            v, h, age = self.embers[xy]
+            v, h, age, sat = self.embers[xy]
 
             if age < 10:
                 hi, lo = 1.30, .75
@@ -726,7 +726,12 @@ class Embers(Matrix):
             new_v = min(255, int(v * fade))
             if new_v == 0:
                 ded.append(xy)
-            self.embers[xy] = (new_v, h, age + 1)
+            else:
+                new_sat = sat;
+                if sat < 255:
+                    fade_sat = lo + (hi - lo) * random.random()
+                    new_sat = min(255, max(0, int(sat / fade_sat)))
+                self.embers[xy] = (new_v, h, age + 1, new_sat)
         for xy in ded:
             del self.embers[xy]
 
@@ -813,64 +818,7 @@ class Embers(Matrix):
         # - hue
         reel = (
 
-            # (
-            #     (.1, {0, 1}, 0),
-            #     (.2, {1, 0}, 20),
-            #     (.3, {0, 1}, 40),
-            #     (.4, {1, 0}, 60),
-            #     # (.5, set(), 0),
-            # ),
-            # (
-            #     (.1, {1, 0}, 30),
-            #     (.2, {1, 0}, 50),
-            #     (.3, {0, 1}, 70),
-            #     (.4, {0, 1}, 90),
-            #     # (.5, set(), 0),
-            # ),
-            # (
-            #     (.05, {0,}, 90),
-            #     (.10, {1,}, 100),
-            #     (.15, {0,}, 110),
-            #     (.20, {1,}, 120),
-            #     (.25, {0,}, 130),
-            #     (.30, {1,}, 140),
-            #     (.35, {0,}, 150),
-            #     (.40, {1,}, 160),
-            #     # (.5, set(), 0),
-            # ),
-            # (
-            #     (.10, {1,}, 140),
-            #     (.15, {0,}, 150),
-            #     (.20, {1,}, 160),
-            #     (.25, {0,}, 170),
-            #     (.30, {1,}, 180),
-            #     (.35, {0,}, 190),
-            #     (.40, {1,}, 200),
-            #     (.45, {0,}, 210),
-            #     # (.5, set(), 0),
-            # ),
-            # (
-            #     (0, {0, 1}, 220),
-            #     (.2, {0, 1}, 50),
-            #     (.4, {0, 1}, 220),
-            #     (.6, {0, 1}, 50),
-            #     (.8, {0, 1}, 220),
-            # ),
-            # (
-            #     (0, {0, 1}, 250),
-            #     (.2, {0, 1}, 80),
-            #     (.4, {0, 1}, 250),
-            #     (.6, {0, 1}, 80),
-            #     (.8, {0, 1}, 250),
-            # ),
-
-            # CODEX try to understand this format and add animations.
-            # - start time on [0, 1)
-            # - which LED strands to light (8 strips total, so [0, 7])
-            # - which color in [0, 255] HSV form to use
-            #
-            # Note that we're alternatinv between colors here with all lights
-            # lit, but it doesn't have to be that way!
+            # wall
             (
                 (0, {0, 1, 2, 3, 4, 5, 6, 7}, 100),
                 (.125, {0, 1, 2, 3, 4, 5, 6, 7}, 220),
@@ -906,12 +854,6 @@ class Embers(Matrix):
                 (.875, {1, 3, 5, 7}, 190),
             ),
 
-            # CODEX add some new animations here! Try:
-            # - left to right sweep (and vice-versa)
-            # - inside-out (and vice versa)
-            # - inside-out (and vice versa)
-            # - etc. Get wild!
-
             # left-to-right sweep with shifting hue
             (
                 (0.00, {0}, 0),
@@ -942,6 +884,62 @@ class Embers(Matrix):
                 (0.8125, {1}, 32),
                 (0.8750, {0}, 0),
                 (0.9375, {1}, 32),
+            ),
+
+            # double ping-pong
+            (
+                (0.0000, {0}, 0),
+                (0.0588, {1}, 32),
+                (0.1176, {0, 2}, 64),
+                (0.1765, {1, 3}, 96),
+                (0.2353, {2, 4}, 128),
+                (0.2941, {3, 5}, 160),
+                (0.3529, {4, 6}, 192),
+                (0.4118, {5, 7}, 224),
+                (0.4706, {6}, 192),
+                (0.5294, {5, 7}, 160),
+                (0.5882, {4, 6}, 128),
+                (0.6471, {3, 5}, 96),
+                (0.7059, {2, 4}, 64),
+                (0.7647, {1, 3}, 32),
+                (0.8235, {0, 2}, 0),
+                (0.8824, {1}, 32),
+                (0.9412, {0}, 32),
+            ),
+
+
+            # trip
+            (
+                (0.05, {0},  128),
+                (0.1 , {1},  160),
+                (0.15, {2},  192),
+                (0.2 , {3},  224),
+                (0.25, {4},  1),
+                (0.26, {0},  252),
+                (0.3 , {5},  33),
+                (0.31, {1},  29),
+                (0.35, {6},  65),
+                (0.36, {2},  61),
+                (0.4 , {7},  97),
+                (0.41, {3},  93),
+                (0.45, {6},  129),
+                (0.46, {4},  125),
+                (0.5 , {5},  161),
+                (0.51, {5},  157),
+                (0.55, {4},  193),
+                (0.56, {6},  189),
+                (0.6 , {3},  225),
+                (0.61, {7},  221),
+                (0.65, {2},  2),
+                (0.66, {6},  253),
+                (0.7 , {1},  34),
+                (0.71, {5},  30),
+                (0.75, {0},  66),
+                (0.76, {4},  62),
+                (0.81, {3},  98),
+                (0.86, {2},  94),
+                (0.91, {1},  126),
+                (0.96, {0},  158),
             ),
 
             # dual runners (two strips chase around the ring order 0,2,4,6,1,3,5,7)
@@ -1079,11 +1077,12 @@ class Embers(Matrix):
             head = int(width * fb.frac)
             if head <= self.layout.width - 1:
                 v[head] = 255
+                sat = max(0, min(255, 145 + random.randint(-80, 80)))
                 if random.randint(0, 99) < sparkprob:
-                    self.embers[(head, fb.strip)] = (startbright, fb.hue, 0)
+                    self.embers[(head, fb.strip)] = (startbright, fb.hue, 0, sat)
                 if head > fb.last_head:
                     for h in range(fb.last_head, head):
-                        self.embers[(h, fb.strip)] = (startbright, fb.hue, 0)
+                        self.embers[(h, fb.strip)] = (startbright, fb.hue, 0, sat)
                 fb.last_head = head
 
             # tail should be gone at this point
@@ -1105,12 +1104,17 @@ class Embers(Matrix):
         for i, b in enumerate(dead_balls):
             del self.balls[b - i]
 
-        # draw fireball and embers
+        # draw fireball and embers (sticky per-ember saturation)
         for y in range(self.layout.height):
             for x in range(self.layout.width):
-                ember_val, ember_hue, _ = self.embers.get((x, y), (0, 0, 0))
-                if ember_val > 0:
-                    self.layout.setHSV(x, y, (ember_hue, 255,
+                edata = self.embers.get((x, y))
+                if edata:
+                    if len(edata) == 4:
+                        ember_val, ember_hue, _, ember_sat = edata
+                    else:
+                        ember_val, ember_hue, _ = edata
+                        ember_sat = 220
+                    self.layout.setHSV(x, y, (ember_hue, ember_sat,
                                         min(max(vals[y][x], ember_val), self.level)))
                 else:
                     self.layout.setHSV(x, y, (hues[y][x], 255, min(vals[y][x], self.level)))
