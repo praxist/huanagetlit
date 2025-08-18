@@ -95,14 +95,11 @@ class MCP(Matrix):
 
         # change = (1, 15)
 
-        # if (now.hour, now.minute) == change:
-        #     if bool(int(self.rc.get("pattern_sparks"))):
-        #         print("sparks no wave yes")
-        #         self.rc.set("pattern_sparks", 0)
-        #         self.rc.set("level_sparks", 0)
-        #         self.rc.set("pattern_wave", 1)
-        #         self.rc.set("level_wave", 255)
-        #         print("DONE")
+        # stupid debug thing
+        self.rc.set("pattern_sparks", 0)
+        self.rc.set("level_sparks", 0)
+        self.rc.set("pattern_wave", 1)
+        self.rc.set("level_wave", 255)
 
 
 class Id(Matrix):
@@ -234,15 +231,15 @@ class Wave(Matrix):
 
         self.strobe = not self.strobe
 
-        for y in range(len(self._morph)):
-            for x in range(len(self._morph[y])):
-                val = self._morph[y][x]
-                # # TODO: make this smooth? sig?
-                if 0 < val and val <= 70:
-                    val = 70
-                # self._stickymorph[y][x] = (max(self._morph[y][x], self._stickymorph[y][x]))
-                self._stickymorph[y][x] = (max(val, self._stickymorph[y][x]))
-                self._stickymorph[y][x] -= 2
+        # for y in range(len(self._morph)):
+        #     for x in range(len(self._morph[y])):
+        #         val = self._morph[y][x]
+        #         # # TODO: make this smooth? sig?
+        #         if 0 < val and val <= 70:
+        #             val = 70
+        #         # self._stickymorph[y][x] = (max(self._morph[y][x], self._stickymorph[y][x]))
+        #         self._stickymorph[y][x] = (max(val, self._stickymorph[y][x]))
+        #         self._stickymorph[y][x] -= 2
 
         # baseline_perc = .1
         # baseline_perc = .5
@@ -308,22 +305,22 @@ class Wave(Matrix):
                 #     print(y, x, self._morph[y][x])
                 # print(len(self._morph))
 
-                # scaled-up fading pressure, used for brightness
-                pressure = self._stickymorph[y][x]
-                # current actual pressure at the spot, used for strobe
-                actual_pressure = self._morph[y][x]
-                if pressure > 0:
-                    hue = (hue + 128) % 255
-                    hi = int(255 / 100 * pressure)
-                    sat = 255
-                    # currently touching this spot (not fading out after touch)
-                    if actual_pressure > 1:
-                        # (other strobe options)
-                        # sat = 80 + int((255 - 80) * abs(.5 - self.fastclock.frac))
-                        # sat = int(255 * ((1 + math.sin(self.fastclock.frac * 2 * math.pi)) / 2))
-                        if self.strobe:
-                            # sat = 0
-                            sat = 255 - int(255 / 100 * actual_pressure)
+                # # scaled-up fading pressure, used for brightness
+                # pressure = self._stickymorph[y][x]
+                # # current actual pressure at the spot, used for strobe
+                # actual_pressure = self._morph[y][x]
+                # if pressure > 0:
+                #     hue = (hue + 128) % 255
+                #     hi = int(255 / 100 * pressure)
+                #     sat = 255
+                #     # currently touching this spot (not fading out after touch)
+                #     if actual_pressure > 1:
+                #         # (other strobe options)
+                #         # sat = 80 + int((255 - 80) * abs(.5 - self.fastclock.frac))
+                #         # sat = int(255 * ((1 + math.sin(self.fastclock.frac * 2 * math.pi)) / 2))
+                #         if self.strobe:
+                #             # sat = 0
+                #             sat = 255 - int(255 / 100 * actual_pressure)
 
                 hi = min(hi, self.level)
                 self.layout.setHSV(x, y, (hue, sat, hi))
