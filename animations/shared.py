@@ -2,7 +2,9 @@ import math
 import redis
 import time
 
-rc = redis.Redis('localhost', charset="utf-8", decode_responses=True)
+# Create a Redis client compatible with redis-py >=4.x.
+# The 'charset' kwarg was removed; default encoding is utf-8.
+rc = redis.Redis(host="localhost", decode_responses=True)
 
 def fade_pixel(fade, layout, i, j):
     old = layout.get(i, j)
@@ -13,4 +15,5 @@ def fade_pixel(fade, layout, i, j):
         )
 
 def interactive():
-    return rc.get("interactive") == "1"
+    return True
+    #return rc.get("interactive") == "1"

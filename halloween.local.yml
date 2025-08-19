@@ -4,13 +4,9 @@
 # driver:
 #   typename: simpixel
 #   num: 800
-
-drivers:
-  - c_order: GRB
-    num: 800
-    ledtype: WS2811
-    typename: .serial
-    dev: /dev/ttyACM0
+driver:
+  typename: simpixel
+  num: 200
 
 aliases:
   bpa: BiblioPixelAnimations.matrix
@@ -61,5 +57,5 @@ layout:
   typename: matrix
   serpentine: false
   width: 100
-  height: 8
+  height: 2
   brightness: 255

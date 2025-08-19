@@ -1,7 +1,7 @@
 import redis
 import time
 
-rc = redis.Redis('localhost', charset="utf-8", decode_responses=True)
+rc = redis.Redis('localhost', decode_responses=True)
 
 while True:
     h = rc.hgetall("morph")

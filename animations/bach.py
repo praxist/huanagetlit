@@ -29,17 +29,17 @@ class MCP(Matrix):
 
         self.t1 = False
         self.t1_hm = (6, 45)
-        self.t1_duration = 150
+        self.t1_duration = 1
         self.t1_dt = dt(now.year, now.month, now.day, self.t1_hm[0], self.t1_hm[1])
 
         self.t2 = False
         self.t2_hm = (7, 15)
-        self.t2_duration = 150
+        self.t2_duration = 1
         self.t2_dt = dt(now.year, now.month, now.day, self.t2_hm[0], self.t2_hm[1])
 
         self.t3 = False
         self.t3_hm = (7, 45)
-        self.t3_duration = 150
+        self.t3_duration = 1
         self.t3_dt = dt(now.year, now.month, now.day, self.t3_hm[0], self.t3_hm[1])
 
     def step(self, amt=1):
@@ -95,14 +95,15 @@ class MCP(Matrix):
 
         # change = (1, 15)
 
-        # if (now.hour, now.minute) == change:
-        #     if bool(int(self.rc.get("pattern_sparks"))):
-        #         print("sparks no wave yes")
-        #         self.rc.set("pattern_sparks", 0)
-        #         self.rc.set("level_sparks", 0)
-        #         self.rc.set("pattern_wave", 1)
-        #         self.rc.set("level_wave", 255)
-        #         print("DONE")
+        # stupid debug thing
+        self.rc.set("pattern_sparks", 0)
+        self.rc.set("level_sparks", 255)
+        self.rc.set("pattern_wave", 0)
+        self.rc.set("level_wave", 255)
+        self.rc.set("pattern_hydropump", 0)
+        self.rc.set("level_hydropump", 255)
+        self.rc.set("pattern_embers", 1)
+        self.rc.set("level_embers", 255)
 
 
 class Id(Matrix):
@@ -167,8 +168,8 @@ class Bump(Matrix):
 
 class Wave(Matrix):
     def __init__(self, *args,
-                 bpm=100,
-                 multiple=1,
+                 bpm=30,
+                 multiple=2,
                  **kwds):
         super().__init__(*args, **kwds)
         self.clock = Clock(bpm, multiple)
@@ -189,7 +190,15 @@ class Wave(Matrix):
         self.level = 255
 
     def fetch(self):
-        ts, = map(int, self.rc.mget("ts"))
+        vals = self.rc.mget("ts")
+        ts = 0
+        if vals:
+            v = vals[0]
+            if v is not None:
+                try:
+                    ts = int(v)
+                except Exception:
+                    ts = 0
         # ts = int(self.rc.mget("ts"))
 
         # try:
@@ -226,15 +235,15 @@ class Wave(Matrix):
 
         self.strobe = not self.strobe
 
-        for y in range(len(self._morph)):
-            for x in range(len(self._morph[y])):
-                val = self._morph[y][x]
-                # # TODO: make this smooth? sig?
-                if 0 < val and val <= 70:
-                    val = 70
-                # self._stickymorph[y][x] = (max(self._morph[y][x], self._stickymorph[y][x]))
-                self._stickymorph[y][x] = (max(val, self._stickymorph[y][x]))
-                self._stickymorph[y][x] -= 2
+        # for y in range(len(self._morph)):
+        #     for x in range(len(self._morph[y])):
+        #         val = self._morph[y][x]
+        #         # # TODO: make this smooth? sig?
+        #         if 0 < val and val <= 70:
+        #             val = 70
+        #         # self._stickymorph[y][x] = (max(self._morph[y][x], self._stickymorph[y][x]))
+        #         self._stickymorph[y][x] = (max(val, self._stickymorph[y][x]))
+        #         self._stickymorph[y][x] -= 2
 
         # baseline_perc = .1
         # baseline_perc = .5
@@ -300,22 +309,22 @@ class Wave(Matrix):
                 #     print(y, x, self._morph[y][x])
                 # print(len(self._morph))
 
-                # scaled-up fading pressure, used for brightness
-                pressure = self._stickymorph[y][x]
-                # current actual pressure at the spot, used for strobe
-                actual_pressure = self._morph[y][x]
-                if pressure > 0:
-                    hue = (hue + 128) % 255
-                    hi = int(255 / 100 * pressure)
-                    sat = 255
-                    # currently touching this spot (not fading out after touch)
-                    if actual_pressure > 1:
-                        # (other strobe options)
-                        # sat = 80 + int((255 - 80) * abs(.5 - self.fastclock.frac))
-                        # sat = int(255 * ((1 + math.sin(self.fastclock.frac * 2 * math.pi)) / 2))
-                        if self.strobe:
-                            # sat = 0
-                            sat = 255 - int(255 / 100 * actual_pressure)
+                # # scaled-up fading pressure, used for brightness
+                # pressure = self._stickymorph[y][x]
+                # # current actual pressure at the spot, used for strobe
+                # actual_pressure = self._morph[y][x]
+                # if pressure > 0:
+                #     hue = (hue + 128) % 255
+                #     hi = int(255 / 100 * pressure)
+                #     sat = 255
+                #     # currently touching this spot (not fading out after touch)
+                #     if actual_pressure > 1:
+                #         # (other strobe options)
+                #         # sat = 80 + int((255 - 80) * abs(.5 - self.fastclock.frac))
+                #         # sat = int(255 * ((1 + math.sin(self.fastclock.frac * 2 * math.pi)) / 2))
+                #         if self.strobe:
+                #             # sat = 0
+                #             sat = 255 - int(255 / 100 * actual_pressure)
 
                 hi = min(hi, self.level)
                 self.layout.setHSV(x, y, (hue, sat, hi))
@@ -323,8 +332,8 @@ class Wave(Matrix):
 
 class Sparks(Matrix):
     def __init__(self, *args,
-                 bpm=100,
-                 multiple=1,
+                 bpm=125,
+                 multiple=6,
                  **kwds):
         super().__init__(*args, **kwds)
         self.clock = Clock(bpm, multiple)
@@ -352,8 +361,16 @@ class Sparks(Matrix):
         self.level = 255
 
     def fetch(self):
-        ts, = map(int, self.rc.mget("ts"))
-        self.mtf = int(self.rc.get("morph_total_force"))
+        vals = self.rc.mget("ts")
+        ts = 0
+        if vals:
+            v = vals[0]
+            if v is not None:
+                try:
+                    ts = int(v)
+                except Exception:
+                    ts = 0
+        self.mtf = int(self.rc.get("morph_total_force") or 0)
         self.on = bool(int(self.rc.get("pattern_sparks") or 0))
         self.level = int(self.rc.get("level_sparks") or 255)
 
@@ -658,12 +675,13 @@ class EmberFireball:
 class Embers(Matrix):
     """Comet with a trail of glowing embers."""
     def __init__(self, *args,
-                 bpm=10,
+                 bpm=32,
                  multiple=1,
-                 fade=0.9,
+                 fade=0.1,
                  **kwds):
 
         super().__init__(*args, **kwds)
+        self.rc = shared.rc
         # time to send a fireball down the strip
         self.clock = Clock(bpm, multiple)
         # (X, Y): launch Y/X times as fast as it takes to complete the strip
@@ -691,7 +709,7 @@ class Embers(Matrix):
         # hi, lo = 1.3, .48
 
         for xy in self.embers:
-            v, h, age = self.embers[xy]
+            v, h, age, sat = self.embers[xy]
 
             if age < 10:
                 hi, lo = 1.30, .75
@@ -708,7 +726,12 @@ class Embers(Matrix):
             new_v = min(255, int(v * fade))
             if new_v == 0:
                 ded.append(xy)
-            self.embers[xy] = (new_v, h, age + 1)
+            else:
+                new_sat = sat;
+                if sat < 255:
+                    fade_sat = lo + (hi - lo) * random.random()
+                    new_sat = min(255, max(0, int(sat / fade_sat)))
+                self.embers[xy] = (new_v, h, age + 1, new_sat)
         for xy in ded:
             del self.embers[xy]
 
@@ -794,67 +817,211 @@ class Embers(Matrix):
         # - strips to launch
         # - hue
         reel = (
+
+            # wall
             (
-                (.1, {0, 7}, 0),
-                (.2, {1, 6}, 20),
-                (.3, {2, 5}, 40),
-                (.4, {3, 4}, 60),
-                # (.5, set(), 0),
+                (0, {0, 1, 2, 3, 4, 5, 6, 7}, 100),
+                (.125, {0, 1, 2, 3, 4, 5, 6, 7}, 220),
+                (.25, {0, 1, 2, 3, 4, 5, 6, 7}, 100),
+                (.375, {0, 1, 2, 3, 4, 5, 6, 7}, 220),
+                (.5, {0, 1, 2, 3, 4, 5, 6, 7}, 100),
+                (.625, {0, 1, 2, 3, 4, 5, 6, 7}, 220),
+                (.75, {0, 1, 2, 3, 4, 5, 6, 7}, 100),
+                (.875, {0, 1, 2, 3, 4, 5, 6, 7}, 220),
             ),
+
+            # alternating even and odd rows
             (
-                (.1, {3, 4}, 30),
-                (.2, {2, 5}, 50),
-                (.3, {1, 6}, 70),
-                (.4, {0, 7}, 90),
-                # (.5, set(), 0),
+                (0, {0, 2, 4, 6}, 40),
+                (.125, {1, 3, 5, 7}, 160),
+                (.25, {0, 2, 4, 6}, 40),
+                (.375, {1, 3, 5, 7}, 160),
+                (.5, {0, 2, 4, 6}, 40),
+                (.625, {1, 3, 5, 7}, 160),
+                (.75, {0, 2, 4, 6}, 40),
+                (.875, {1, 3, 5, 7}, 160),
             ),
+
+            # start to drift the color
             (
-                (.05, {0,}, 90),
-                (.10, {1,}, 100),
-                (.15, {2,}, 110),
-                (.20, {3,}, 120),
-                (.25, {4,}, 130),
-                (.30, {5,}, 140),
-                (.35, {6,}, 150),
-                (.40, {7,}, 160),
-                # (.5, set(), 0),
+                (0, {0, 2, 4, 6}, 40),
+                (.125, {1, 3, 5, 7}, 160),
+                (.25, {0, 2, 4, 6}, 50),
+                (.375, {1, 3, 5, 7}, 170),
+                (.5, {0, 2, 4, 6}, 60),
+                (.625, {1, 3, 5, 7}, 180),
+                (.75, {0, 2, 4, 6}, 70),
+                (.875, {1, 3, 5, 7}, 190),
             ),
+
+            # left-to-right sweep with shifting hue
             (
-                (.10, {7,}, 140),
-                (.15, {6,}, 150),
-                (.20, {5,}, 160),
-                (.25, {4,}, 170),
-                (.30, {3,}, 180),
-                (.35, {2,}, 190),
-                (.40, {1,}, 200),
-                (.45, {0,}, 210),
-                # (.5, set(), 0),
+                (0.00, {0}, 0),
+                (0.12, {1}, 20),
+                (0.24, {2}, 40),
+                (0.36, {3}, 60),
+                (0.48, {4}, 80),
+                (0.60, {5}, 100),
+                (0.72, {6}, 120),
+                (0.84, {7}, 140),
             ),
+
+            # ping-pong sweep (0->7 then 7->0 without repeating endpoints)
             (
-                (0, {0, 1, 2, 3, 4, 5, 6, 7}, 220),
-                (.2, {0, 1, 2, 3, 4, 5, 6, 7}, 50),
-                (.4, {0, 1, 2, 3, 4, 5, 6, 7}, 220),
-                (.6, {0, 1, 2, 3, 4, 5, 6, 7}, 50),
-                (.8, {0, 1, 2, 3, 4, 5, 6, 7}, 220),
+                (0.00, {0}, 0),
+                (0.0625, {1}, 32),
+                (0.1250, {2}, 64),
+                (0.1875, {3}, 96),
+                (0.2500, {4}, 128),
+                (0.3125, {5}, 160),
+                (0.3750, {6}, 192),
+                (0.4375, {7}, 224),
+                (0.5000, {6}, 192),
+                (0.5625, {5}, 160),
+                (0.6250, {4}, 128),
+                (0.6875, {3}, 96),
+                (0.7500, {2}, 64),
+                (0.8125, {1}, 32),
+                (0.8750, {0}, 0),
+                (0.9375, {1}, 32),
             ),
+
+            # double ping-pong
             (
-                (0, {0, 1, 2, 3, 4, 5, 6, 7}, 250),
-                (.2, {0, 1, 2, 3, 4, 5, 6, 7}, 80),
-                (.4, {0, 1, 2, 3, 4, 5, 6, 7}, 250),
-                (.6, {0, 1, 2, 3, 4, 5, 6, 7}, 80),
-                (.8, {0, 1, 2, 3, 4, 5, 6, 7}, 250),
+                (0.0000, {0}, 0),
+                (0.0588, {1}, 32),
+                (0.1176, {0, 2}, 64),
+                (0.1765, {1, 3}, 96),
+                (0.2353, {2, 4}, 128),
+                (0.2941, {3, 5}, 160),
+                (0.3529, {4, 6}, 192),
+                (0.4118, {5, 7}, 224),
+                (0.4706, {6}, 192),
+                (0.5294, {5, 7}, 160),
+                (0.5882, {4, 6}, 128),
+                (0.6471, {3, 5}, 96),
+                (0.7059, {2, 4}, 64),
+                (0.7647, {1, 3}, 32),
+                (0.8235, {0, 2}, 0),
+                (0.8824, {1}, 32),
+                (0.9412, {0}, 32),
             ),
-            # (
-            #     (0, {0, 1, 2, 3, 4, 5, 6, 7}, 100),
-            #     (.125, {0, 1, 2, 3, 4, 5, 6, 7}, 220),
-            #     (.25, {0, 1, 2, 3, 4, 5, 6, 7}, 100),
-            #     (.375, {0, 1, 2, 3, 4, 5, 6, 7}, 220),
-            #     (.5, {0, 1, 2, 3, 4, 5, 6, 7}, 100),
-            #     (.625, {0, 1, 2, 3, 4, 5, 6, 7}, 220),
-            #     (.75, {0, 1, 2, 3, 4, 5, 6, 7}, 100),
-            #     (.875, {0, 1, 2, 3, 4, 5, 6, 7}, 220),
-            #     # (.9, set(), 0),
-            # ),
+
+
+            # trip
+            (
+                (0.05, {0},  128),
+                (0.1 , {1},  160),
+                (0.15, {2},  192),
+                (0.2 , {3},  224),
+                (0.25, {4},  1),
+                (0.26, {0},  252),
+                (0.3 , {5},  33),
+                (0.31, {1},  29),
+                (0.35, {6},  65),
+                (0.36, {2},  61),
+                (0.4 , {7},  97),
+                (0.41, {3},  93),
+                (0.45, {6},  129),
+                (0.46, {4},  125),
+                (0.5 , {5},  161),
+                (0.51, {5},  157),
+                (0.55, {4},  193),
+                (0.56, {6},  189),
+                (0.6 , {3},  225),
+                (0.61, {7},  221),
+                (0.65, {2},  2),
+                (0.66, {6},  253),
+                (0.7 , {1},  34),
+                (0.71, {5},  30),
+                (0.75, {0},  66),
+                (0.76, {4},  62),
+                (0.81, {3},  98),
+                (0.86, {2},  94),
+                (0.91, {1},  126),
+                (0.96, {0},  158),
+            ),
+
+            # dual runners (two strips chase around the ring order 0,2,4,6,1,3,5,7)
+            (
+                (0.00, {0, 4}, 20),
+                (0.125, {2, 6}, 50),
+                (0.250, {4, 0}, 80),
+                (0.375, {6, 2}, 110),
+                (0.500, {1, 5}, 140),
+                (0.625, {3, 7}, 170),
+                (0.750, {5, 1}, 200),
+                (0.875, {7, 3}, 230),
+            ),
+
+            # triple burst (three-adjacent groups wrap-around with shifting hue)
+            (
+                (0.00, {0, 1, 2}, 10),
+                (0.125, {1, 2, 3}, 40),
+                (0.250, {2, 3, 4}, 70),
+                (0.375, {3, 4, 5}, 100),
+                (0.500, {4, 5, 6}, 130),
+                (0.625, {5, 6, 7}, 160),
+                (0.750, {6, 7, 0}, 190),
+                (0.875, {7, 0, 1}, 220),
+            ),
+
+            # blossom: center-out grow then collapse
+            (
+                (0.00, {3, 4}, 200),
+                (0.125, {2, 3, 4, 5}, 220),
+                (0.250, {1, 2, 3, 4, 5, 6}, 240),
+                (0.375, {0, 1, 2, 3, 4, 5, 6, 7}, 8),
+                (0.500, {1, 2, 3, 4, 5, 6}, 28),
+                (0.625, {2, 3, 4, 5}, 48),
+                (0.750, {3, 4}, 68),
+                (0.875, {3, 4}, 88),
+            ),
+
+            # right-to-left sweep with complementary hue
+            (
+                (0.00, {7}, 200),
+                (0.12, {6}, 220),
+                (0.24, {5}, 240),
+                (0.36, {4}, 10),
+                (0.48, {3}, 30),
+                (0.60, {2}, 50),
+                (0.72, {1}, 70),
+                (0.84, {0}, 90),
+            ),
+
+            # inside-out pairs (center -> edges)
+            (
+                (0.00, {3, 4}, 30),
+                (0.20, {2, 5}, 60),
+                (0.40, {1, 6}, 90),
+                (0.60, {0, 7}, 120),
+                (0.80, {3, 4}, 150),
+            ),
+
+            # outside-in pairs (edges -> center)
+            (
+                (0.00, {0, 7}, 190),
+                (0.20, {1, 6}, 210),
+                (0.40, {2, 5}, 230),
+                (0.60, {3, 4}, 250),
+                (0.80, {0, 7}, 180),
+            ),
+
+            # alternating stripes with rolling rainbow
+            (
+                (0.00, {0, 2, 4, 6}, 0),
+                (0.10, {1, 3, 5, 7}, 32),
+                (0.20, {0, 2, 4, 6}, 64),
+                (0.30, {1, 3, 5, 7}, 96),
+                (0.40, {0, 2, 4, 6}, 128),
+                (0.50, {1, 3, 5, 7}, 160),
+                (0.60, {0, 2, 4, 6}, 192),
+                (0.70, {1, 3, 5, 7}, 224),
+                (0.80, {0, 2, 4, 6}, 255),
+                (0.90, {1, 3, 5, 7}, 16),
+            ),
+
         )
 
         reeltimes = [[t for t, v, h in r] for r in reel]
@@ -885,18 +1052,18 @@ class Embers(Matrix):
                 self.frames_done = set()
                 self.rdex = (self.rdex + 1) % len(reel)
 
-            # pushed a button, launch a fireball
-            for i, b in enumerate(overlay.lrbuttons.values()):
-                if b.pressed:
-                    self.balls.append(EmberFireball(
-                        i,
-                        # random.randint(0, self.layout.height - 1),
-                        44,
-                        self.clock.frac,
-                        random.randint(0, 255)
-                    ))
-                    self.paused = True
-                    self.last_touch = time.time()
+            # # pushed a button, launch a fireball
+            # for i, b in enumerate(overlay.lrbuttons.values()):
+            #     if b.pressed:
+            #         self.balls.append(EmberFireball(
+            #             i,
+            #             # random.randint(0, self.layout.height - 1),
+            #             44,
+            #             self.clock.frac,
+            #             random.randint(0, 255)
+            #         ))
+            #         self.paused = True
+            #         self.last_touch = time.time()
 
 
         vals = [[0 for x in range(self.layout.width)] for y in range(self.layout.height)]
@@ -910,11 +1077,12 @@ class Embers(Matrix):
             head = int(width * fb.frac)
             if head <= self.layout.width - 1:
                 v[head] = 255
+                sat = max(0, min(255, 145 + random.randint(-80, 80)))
                 if random.randint(0, 99) < sparkprob:
-                    self.embers[(head, fb.strip)] = (startbright, fb.hue, 0)
+                    self.embers[(head, fb.strip)] = (startbright, fb.hue, 0, sat)
                 if head > fb.last_head:
                     for h in range(fb.last_head, head):
-                        self.embers[(h, fb.strip)] = (startbright, fb.hue, 0)
+                        self.embers[(h, fb.strip)] = (startbright, fb.hue, 0, sat)
                 fb.last_head = head
 
             # tail should be gone at this point
@@ -936,12 +1104,17 @@ class Embers(Matrix):
         for i, b in enumerate(dead_balls):
             del self.balls[b - i]
 
-        # draw fireball and embers
+        # draw fireball and embers (sticky per-ember saturation)
         for y in range(self.layout.height):
             for x in range(self.layout.width):
-                ember_val, ember_hue, _ = self.embers.get((x, y), (0, 0, 0))
-                if ember_val > 0:
-                    self.layout.setHSV(x, y, (ember_hue, 255,
+                edata = self.embers.get((x, y))
+                if edata:
+                    if len(edata) == 4:
+                        ember_val, ember_hue, _, ember_sat = edata
+                    else:
+                        ember_val, ember_hue, _ = edata
+                        ember_sat = 220
+                    self.layout.setHSV(x, y, (ember_hue, ember_sat,
                                         min(max(vals[y][x], ember_val), self.level)))
                 else:
                     self.layout.setHSV(x, y, (hues[y][x], 255, min(vals[y][x], self.level)))
