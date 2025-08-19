@@ -1,0 +1,13 @@
+[Unit]
+Description=lights
+After=multi-user.target
+
+[Service]
+Type=simple
+User=lightslightslights
+ExecStart=/usr/bin/bash -c /home/lightslightslights/lights/huanagetlit/scripts/start_actual /home/lightslightslights/lights/huanagetlit/scripts/start_actual
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

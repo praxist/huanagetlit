@@ -7,3 +7,4 @@ name = "pypi"
 
 [packages]
 bibliopixel = {editable = true,path = "./BiblioPixel"}
+redis = ">4"

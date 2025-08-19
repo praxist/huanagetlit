@@ -10,6 +10,7 @@ drivers:
     num: 800
     ledtype: WS2811
     typename: .serial
+    dev: /dev/ttyACM0
 
 aliases:
   bpa: BiblioPixelAnimations.matrix
