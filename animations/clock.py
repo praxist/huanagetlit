@@ -16,10 +16,26 @@ class Clock:
 
     def fetch(self):
         """Set ts and bpm attrs from redis."""
-        ts, bpm = map(int, self.rc.mget("ts", "bpm"))
-        if ts > self._last_fetch:
-            self.set_bpm_attrs(bpm, self.multiple)
-            print("BPM IS {}".format(bpm))
+        vals = self.rc.mget("ts", "bpm")
+        ts_raw = vals[0] if vals else None
+        bpm_raw = vals[1] if vals and len(vals) > 1 else None
+
+        try:
+            ts = int(ts_raw) if ts_raw is not None else 0
+        except Exception:
+            ts = 0
+
+        # Only update BPM when we have a valid integer value and a newer ts
+        new_bpm = None
+        try:
+            if bpm_raw is not None:
+                new_bpm = int(bpm_raw)
+        except Exception:
+            new_bpm = None
+
+        if ts > self._last_fetch and new_bpm is not None:
+            self.set_bpm_attrs(new_bpm, self.multiple)
+            print("BPM IS {}".format(new_bpm))
             self._last_fetch = ts
 
     def set_bpm_attrs(self, bpm, multiple):

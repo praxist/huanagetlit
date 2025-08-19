@@ -38,6 +38,7 @@ class Entry(Matrix):
         self.shift = 0
 
         super().__init__(*args, **kwds)
+        self.rc = shared.rc
 
     # fades pixel at [i,j] by self.fade
     def fade_pixel(self, i, j):
@@ -122,6 +123,7 @@ class Waterfall:
             brightness = int(self.level / self.max_level * 255)
             if not self.rising:
                 brightness = 255
+        brightness = 255
         return color_scale(self._color, brightness)
 
 
@@ -192,6 +194,7 @@ class HydroPump(Matrix):
         self.level = 255
         #The base class MUST be initialized by calling super like this
         super().__init__(*args, **kwds)
+        self.rc = shared.rc
 
         for i in range(self.layout.height):
             self.waterfalls_left.append(Waterfall(self.layout.width/2, self.pressure, self.gravity, starting_level=0))
@@ -237,10 +240,11 @@ class HydroPump(Matrix):
         # overlay.update_buttons(self.rc.get("buttons"), now)
         self.on = bool(int(self.rc.get("pattern_hydropump") or 0))
         self.level = int(self.rc.get("level_hydropump") or 255)
-        if shared.interactive():
-            self.activate_waterfalls_interactive()
-        else:
-            self.activate_waterfalls()
+        # if shared.interactive():
+        #     self.activate_waterfalls_interactive()
+        # else:
+        #     self.activate_waterfalls()
+        self.activate_waterfalls()
         self.update_water_levels(self.waterfalls_left)
         self.update_water_levels(self.waterfalls_right)
 

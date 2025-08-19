@@ -115,18 +115,34 @@ lrbuttons = OrderedDict((
 ))
 
 def update_sliders(dat):
+    if not dat:
+        return
     sliders_dat = dat.split(",")
     for slider_dat in sliders_dat:
-        name, percent = slider_dat.split("-")
-        percent = int(percent)
-        sliders[name].percentage = percent
+        if not slider_dat:
+            continue
+        try:
+            name, percent = slider_dat.split("-")
+            percent = int(percent)
+            sliders[name].percentage = percent
+        except Exception:
+            # Ignore malformed slider payloads
+            pass
 
 
 def update_buttons(dat, now):
+    if not dat:
+        return
     buttons_dat = dat.split(",")
     for button_dat in buttons_dat:
-        name, ts_up, ts_down = button_dat.split("-")
-        buttons[name].update(float(ts_up), float(ts_down), now)
+        if not button_dat:
+            continue
+        try:
+            name, ts_up, ts_down = button_dat.split("-")
+            buttons[name].update(float(ts_up), float(ts_down), now)
+        except Exception:
+            # Ignore malformed button payloads
+            pass
 
 # TODO: better way of hardcoding this
 WIDTH = 100
